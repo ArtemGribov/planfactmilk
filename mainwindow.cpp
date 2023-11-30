@@ -832,7 +832,7 @@ bool MainWindow::calculation()
                          //Описание материала
                          s << rowListFact[rFact].at(rowListFact[0].indexOf("MATXT"));
                          //ВИ
-                         s << "?" + rowListFact[rFact].at(rowListFact[0].indexOf("VERID"));
+                         s << rowListFact[rFact].at(rowListFact[0].indexOf("VERID"));
                          //PLO номер
                          s << "";
                          //PLO Начало
