@@ -28,6 +28,15 @@ int TableModelMain::columnCount(const QModelIndex &/*parent*/) const
     return rowList[0].size();
 }
 
+
+//для заказов которые были скорректированы
+bool checkQuestion(QString str) {
+    if(str == "?") {
+        return true;
+    }
+    return false;
+}
+
 QVariant TableModelMain::data(const QModelIndex &index, int role) const
 {
     if(!index.isValid())
@@ -39,6 +48,18 @@ QVariant TableModelMain::data(const QModelIndex &index, int role) const
     //Цвет фона
     if(role == Qt::BackgroundColorRole)
     {
+        //для заказов которые были скорректированы
+        if(checkQuestion(rowList[index.row()][OperationId].left(1))) {
+            if((index.column() == MilkReqFact) ||
+            (index.column() == SkMilkReqFact) ||
+            (index.column() == CreamReqFact) ||
+            (index.column() == MilkDelta) ||
+            (index.column() == SkMilkDelta) ||
+            (index.column() == CreamDelta)) {
+                return QColor(250,200,250);
+            }
+        }
+
         //для промежуточных итогов
         if(index.row() != rowList.length()-1 && rowList[index.row()][ProductLocationId].isEmpty())
             return QColor(225,225,225);
@@ -98,6 +119,7 @@ QVariant TableModelMain::data(const QModelIndex &index, int role) const
                 return QColor(165, 180, 255);
             }
         }
+
         if((index.column() == MilkReqPlan) && rowList[index.row()][MilkReqPlan].toFloat() != 0) {
             return QColor(110,180,255);
         }

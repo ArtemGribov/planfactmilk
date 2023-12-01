@@ -35,7 +35,8 @@ public:
     bool isComponent(QString Category, QString Type, QString Material, QString Plant);
     void addSubTotalRow();
     void addTotalRow();
-    void deltasum(QString type);
+    void deltaTotalStock(QString type);
+    void addTotalReq();
     void slicetime();
     bool prepeadTables();
 

@@ -283,17 +283,6 @@ bool MainWindow::on_pushButtonStart_clicked()
             return false;
         }
 
-        //Путь к распаковщику
-        pathprogram = QDir::currentPath() + "/unpack.exe";
-        if(!QFile::exists(pathprogram)) {
-            labelstatus->setText("Распаковщик отсутствует. Проверьте целостность файлов.");
-            ui->pushButtonStart->setEnabled(true);
-            ui->dateEdit->setEnabled(true);
-            ui->comboBoxPlant->setEnabled(true);
-            return false;
-        }
-
-
         //Поиск плановых данных
         pathfileplan = findSourceFile(pathdirplan);
         if(pathfileplan.isEmpty()) {
@@ -318,7 +307,7 @@ bool MainWindow::on_pushButtonStart_clicked()
         destinfileplan = pathdestin + "/" + pathfileplan.right(40);
         QDir dir(pathdestin);
         if(QDir(pathdestin).exists()) {
-            if(!pathprogram.isEmpty() && !pathfileplan.isEmpty() && !destinfileplan.isEmpty()) {
+            if(!pathfileplan.isEmpty() && !destinfileplan.isEmpty()) {
                 //Копируем файл исходник
                 if(QFile::exists(destinfileplan)) {
                     QFile::remove(destinfileplan);
@@ -336,6 +325,16 @@ bool MainWindow::on_pushButtonStart_clicked()
                 QTextStream out(&file);
                 out << "_%start_process";
                 file.close();
+
+                //Путь к распаковщику
+                pathprogram = QDir::currentPath() + "/unpack.exe";
+                if(!QFile::exists(pathprogram)) {
+                    labelstatus->setText("Распаковщик отсутствует. Проверьте целостность файлов.");
+                    ui->pushButtonStart->setEnabled(true);
+                    ui->dateEdit->setEnabled(true);
+                    ui->comboBoxPlant->setEnabled(true);
+                    return false;
+                }
 
                 //Запуск распаковщика
                 startUnpack(pathprogram, destinfileplan, pathdestin);
@@ -816,9 +815,6 @@ bool MainWindow::calculation()
                  if(ORDER != rowListFact[rFact].at(rowListFact[0].indexOf("AUFNR"))) {
                     //Заказы которые созданы в день оценки
                     if(createdate.addSecs(60 * 60) >= QDateTime(selectDate)) {
-                         //qDebug() << QDateTime(selectDate).toString("dd.MM.yyyy hh:mm:ss");
-                         //qDebug() << createdate.addSecs(60 * 60).toString("dd.MM.yyyy hh:mm:ss");
-                         //qDebug() << changedate.addSecs(60 * 60).toString("dd.MM.yyyy hh:mm:ss");
                          ORDER = rowListFact[rFact].at(rowListFact[0].indexOf("AUFNR"));
                          QStringList s;
                          //StepId
@@ -1218,10 +1214,10 @@ bool MainWindow::calculation()
     //Срез по времени
     slicetime();
 
-    //Дельта
-    deltasum("milk");
-    deltasum("skmilk");
-    deltasum("cream");
+    //Дельта по запасу
+    deltaTotalStock("milk");
+    deltaTotalStock("skmilk");
+    deltaTotalStock("cream");
 
     //Сортировка
     for(int rMain = 0; rMain < rowListMain.length(); rMain++) {
@@ -1234,6 +1230,10 @@ bool MainWindow::calculation()
             }
         }
     }
+
+    //Итоговый расход
+    MainWindow::addTotalReq();
+
 
     //Добавить промежуточные итоги
     addSubTotalRow();
@@ -1255,6 +1255,7 @@ bool MainWindow::calculation()
     ui->tableView->setModel(model);
     ui->tableView->hideColumn(0);
     ui->tableView->hideColumn(1);
+    ui->tableView->hideColumn(5);
 
     //Размеры
     ui->tableView->resizeColumnsToContents();
@@ -1294,7 +1295,34 @@ void MainWindow::on_action_About_triggered()
 //    window.exec();
 //}
 
-void MainWindow::deltasum(QString type) {
+void MainWindow::addTotalReq() {
+    //Добавить пустую запись
+    QStringList s;
+    for(int i = 0; i < ColumnHeader.length(); i++) {
+        s.append("");
+    }
+    rowListMain.append(s);
+
+    QStringList strlist;
+    strlist << "MilkReqPlan" << "MilkReqFact" << "MilkDelta"
+            << "SkMilkReqPlan" << "SkMilkReqFact" << "SkMilkDelta"
+            << "CreamReqPlan" << "CreamReqFact" << "CreamDelta";
+    //Обнулить цифровые значения в строке
+    foreach(QString c, strlist) {
+        float Qty = 0;
+        for(int rMain = 0; rMain < rowListMain.length(); rMain++) {
+            if(rowListMain[rMain].at(ColumnHeader.indexOf(c)).left(1) == "-") {
+                Qty += rowListMain[rMain].at(ColumnHeader.indexOf(c)).toFloat();
+            }
+        }
+        qDebug() << rowListMain.length()-1 << " " << ColumnHeader.indexOf(c);
+        rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("DeliveryFact")] = "Расход:";
+        rowListMain[rowListMain.length()-1][ColumnHeader.indexOf(c)] = QString::number(Qty / 1000) + "т.";
+    }
+}
+
+
+void MainWindow::deltaTotalStock(QString type) {
     //Дельта по молоку
     if(type == "milk") {
         for(int rMain = 0; rMain < rowListMain.length(); rMain++) {
