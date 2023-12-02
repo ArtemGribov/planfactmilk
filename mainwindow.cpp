@@ -118,8 +118,8 @@ void MainWindow::deletegarbage() {
         QFile::remove(destinfileplan);
 
     //Удалить распакованные файлы
-    QFile file(pathdestin + "_OMPSAPMilkBalance");
-    if(QFile::exists(pathdestin + "_OMPSAPMilkBalance")) {
+    QFile file(pathdestin + "_$pipeline.tmp");
+    if(QFile::exists(pathdestin + "_$pipeline.tmp")) {
         file.open(QIODevice::ReadOnly);
         QTextStream out(&file);
         QString str = out.readAll();
@@ -131,8 +131,8 @@ void MainWindow::deletegarbage() {
         file.close();
     }
     //Удалить файл маршрутов
-    if(QFile::exists(pathdestin + "_OMPSAPMilkBalance"))
-        QFile::remove(pathdestin + "_OMPSAPMilkBalance");
+    if(QFile::exists(pathdestin + "_$pipeline.tmp"))
+        QFile::remove(pathdestin + "_$pipeline.tmp");
 }
 
 
@@ -317,9 +317,9 @@ bool MainWindow::on_pushButtonStart_clicked()
                     QFile::copy(pathfileplan, destinfileplan);
 
                 //Создать файл передачи параметров
-                QFile file(pathdestin + "_OMPSAPMilkBalance");
-                if(QFile::exists(pathdestin + "_OMPSAPMilkBalance")) {
-                    QFile::remove(pathdestin + "_OMPSAPMilkBalance");
+                QFile file(pathdestin + "_$pipeline.tmp");
+                if(QFile::exists(pathdestin + "_$pipeline.tmp")) {
+                    QFile::remove(pathdestin + "_$pipeline.tmp");
                 }
                 file.open(QIODevice::WriteOnly);
                 QTextStream out(&file);
@@ -573,9 +573,9 @@ void MainWindow::timerEvent(QTimerEvent*)
     }
     else labelstatus->setText("Распаковка данных");
 
-     QFile file(pathdestin + "_OMPSAPMilkBalance");
+     QFile file(pathdestin + "_$pipeline.tmp");
      //Проверка буферного файла на окончание распаковки
-     if(QFile::exists(pathdestin + "_OMPSAPMilkBalance")) {
+     if(QFile::exists(pathdestin + "_$pipeline.tmp")) {
          file.open(QIODevice::ReadOnly);
          QTextStream in(&file);
          QString str = in.readAll();
@@ -602,10 +602,10 @@ void MainWindow::timerEvent(QTimerEvent*)
 //Подготовка плановых данных
 bool MainWindow::prepeadTables() {
     QApplication::processEvents();
-    QFile file(pathdestin + "_OMPSAPMilkBalance");
-    if(QFile::exists(pathdestin + "_OMPSAPMilkBalance")) {
+    QFile file(pathdestin + "_$pipeline.tmp");
+    if(QFile::exists(pathdestin + "_$pipeline.tmp")) {
         if(!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-            qDebug() << "No file _OMPSAPMilkBalance";
+            qDebug() << "No file _$pipeline.tmp";
             return false;
         }
         QTextStream in(&file);
