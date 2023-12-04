@@ -60,32 +60,42 @@ QVariant TableModelMain::data(const QModelIndex &index, int role) const
             }
         }
 
-        //для промежуточных итогов
-        if(index.row() != rowList.length()-1 && rowList[index.row()][ProductLocationId].isEmpty())
-            return QColor(225,225,225);
         //для общего итога
-        if((index.row() == rowList.length()-1)) {
+        if(index.row() == rowList.length()-1) {
             if(index.column() == MilkDelta) {
-                if(abs(rowList[index.row()][MilkDelta].toFloat()) > *MilkCriteria)
-                    return QColor(255, 150, 150);
+                int pos = rowList[index.row()][MilkDelta].indexOf("т.");
+                if(abs(rowList[index.row()][MilkDelta].left(pos).toFloat()) > *MilkCriteria)
+                    return QColor(255,150,150);
                 else
                     return QColor(Qt::green);
             }
             else if(index.column() == SkMilkDelta) {
-                if(abs(rowList[index.row()][SkMilkDelta].toFloat()) > *SkMilkCriteria)
-                    return QColor(255, 150, 150);
+                int pos = rowList[index.row()][SkMilkDelta].indexOf("т.");
+                if(abs(rowList[index.row()][SkMilkDelta].left(pos).toFloat()) > *SkMilkCriteria)
+                    return QColor(255,150, 150);
                 else
                     return QColor(Qt::green);
             }
             else if(index.column() == CreamDelta) {
-                if(abs(rowList[index.row()][CreamDelta].toFloat()) > *CreamCriteria)
-                    return QColor(255, 150, 150);
+                int pos = rowList[index.row()][CreamDelta].indexOf("т.");
+                if(abs(rowList[index.row()][CreamDelta].left(pos).toFloat()) > *CreamCriteria)
+                    return QColor(255,150,150);
                 else
                     return QColor(Qt::green);
             }
             else
-                return QColor(173, 216, 230);
+                return QColor(173,216,230);
         }
+        //для расхода и прихода
+        else if (index.row() == rowList.length()-2 || index.row() == rowList.length()-3) {
+            return QColor(173,216,230);
+        }
+
+        //для промежуточных итогов
+        if(index.row() != rowList.length()-1 && rowList[index.row()][ProductLocationId].isEmpty())
+            return QColor(225,225,225);
+
+
         //для статуса INTL
         if(rowList[index.row()][Status] == "INTL" || rowList[index.row()][Status] == "UNTE") {
             QDateTime start = QDateTime::fromString(rowList[index.row()][StartFact], "dd.MM.yyyy hh:mm:ss");
@@ -106,17 +116,17 @@ QVariant TableModelMain::data(const QModelIndex &index, int role) const
             if((start < QDateTime(CheckDate->addDays(1)) && end > QDateTime(CheckDate->addDays(1))) ||
             start >= QDateTime(CheckDate->addDays(1))) {
                 if((index.column() == MilkReqFact) && rowList[index.row()][MilkReqFact].toFloat() != 0) {
-                    return QColor(250, 200, 250);
+                    return QColor(250,200,250);
                 }
                 if((index.column() == SkMilkReqFact) && rowList[index.row()][SkMilkReqFact].toFloat() != 0) {
-                    return QColor(250, 200, 250);
+                    return QColor(250,200,250);
                 }
                 if((index.column() == CreamReqFact) && rowList[index.row()][CreamReqFact].toFloat() != 0) {
-                    return QColor(250, 200, 250);
+                    return QColor(250,200,250);
                 }
             }
             if(index.column() == Status) {
-                return QColor(165, 180, 255);
+                return QColor(165,180,255);
             }
         }
 
