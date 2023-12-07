@@ -1246,6 +1246,12 @@ bool MainWindow::calculation() {
                 }
             }
         }
+        else {
+            if(startPlan >= QDateTime(selectDate.addDays(1))) {
+                rowListMain.removeAt(rMain);
+                rMain--;
+            }
+        }
     }
 
     //Срез по времени
