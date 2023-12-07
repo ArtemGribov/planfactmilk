@@ -34,6 +34,7 @@ MainWindow::MainWindow(QWidget *parent)
                  << "MachineId"
                  << "ProductLocationId"
                  << "Description"
+                 << "Version"
                  << "OperationId"
                  << "OrderPlan"
                  << "StartPlan"
@@ -689,10 +690,10 @@ bool MainWindow::calculation() {
         if(rowListStep[rStep].at(rowListStep[0].indexOf("MachineId")).left(4) == selectPlant) {
             QRegExp rxProductLocation("(CIP|3400|QI|Test)");
             QRegExp rxMachine("(ZETA|WALDNER|SELO|DARBO|TERLET)");
-            QRegExp rxOperation("(/0020)");
+            //QRegExp rxOperation("(/0020)");
             if(rxProductLocation.indexIn(rowListStep[rStep].at(rowListStep[0].indexOf("ProductLocationId"))) == -1) {
                 if(rxMachine.indexIn(rowListStep[rStep].at(rowListStep[0].indexOf("MachineId"))) == -1) {
-                    if(rxOperation.indexIn(rowListStep[rStep].at(rowListStep[0].indexOf("OperationId"))) != -1) {
+                    //if(rxOperation.indexIn(rowListStep[rStep].at(rowListStep[0].indexOf("OperationId"))) != -1) {
                         QStringList s;
                         s << rowListStep[rStep].at(rowListStep[0].indexOf("StepId"))
                         << rowListStep[rStep].at(rowListStep[0].indexOf("RunId"))
@@ -711,6 +712,7 @@ bool MainWindow::calculation() {
                             }
                         }
 
+                        //Версия
                         if(rowListStep[rStep].at(rowListStep[0].indexOf("OperationId")).left(4) != "PRO/") {
                             s << rowListStep[rStep].at(rowListStep[0].indexOf("OperationId")).left(4);
                         }
@@ -718,6 +720,9 @@ bool MainWindow::calculation() {
                         {
                             s << "";
                         }
+
+                        //Операция
+                        s << rowListStep[rStep].at(rowListStep[0].indexOf("OperationId"));
 
                         //Поиск номера PLO
                         for(int rRun = 1; rRun < rowListRun.length(); rRun++) {
@@ -748,7 +753,7 @@ bool MainWindow::calculation() {
                         QString str;
                         s << str.number(PlanQty);
                         rowListMain.append(s);
-                    }
+                    //}
                 }
             }
         }
@@ -847,8 +852,10 @@ bool MainWindow::calculation() {
                          s << rowListFact[rFact].at(rowListFact[0].indexOf("PLNBEZ")).right(9);
                          //Описание материала
                          s << rowListFact[rFact].at(rowListFact[0].indexOf("MATXT"));
-                         //ВИ
+                         //Версия
                          s << rowListFact[rFact].at(rowListFact[0].indexOf("VERID"));
+                         //Операция
+                         s << "";
                          //PLO номер
                          s << "";
                          //PLO Начало
@@ -906,6 +913,8 @@ bool MainWindow::calculation() {
                         else {
                             s << rowListFact[rFact].at(rowListFact[0].indexOf("VERID"));
                         }
+                        //Операция
+                        s << "";
 
                         //PLO номер
                         s << "";
@@ -1282,7 +1291,7 @@ bool MainWindow::calculation() {
     ui->tableView->setModel(model);
     ui->tableView->hideColumn(0);
     ui->tableView->hideColumn(1);
-    ui->tableView->hideColumn(5);
+    //ui->tableView->hideColumn(5);
 
     //Размеры
     ui->tableView->resizeColumnsToContents();

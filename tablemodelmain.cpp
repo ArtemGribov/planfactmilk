@@ -49,7 +49,7 @@ QVariant TableModelMain::data(const QModelIndex &index, int role) const
     if(role == Qt::BackgroundColorRole)
     {
         //для заказов которые были скорректированы
-        if(checkQuestion(rowList[index.row()][OperationId].left(1))) {
+        if(checkQuestion(rowList[index.row()][Version].left(1))) {
             if((index.column() == MilkReqFact) ||
             (index.column() == SkMilkReqFact) ||
             (index.column() == CreamReqFact) ||
@@ -211,7 +211,8 @@ QVariant TableModelMain::headerData(int section, Qt::Orientation orientation,
     case MachineId: return "Машина";
     case ProductLocationId: return "Код";
     case Description: return "Описание";
-    case OperationId: return "ВИ";
+    case Version: return "Версия";
+    case OperationId: return "Операция";
     case OrderPlan: return "Номер план";
     case StartPlan: return "Начало план";
     case EndPlan: return "Конец план";

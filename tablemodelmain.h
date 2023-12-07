@@ -13,6 +13,7 @@ public:
         MachineId,
         ProductLocationId,
         Description,
+        Version,
         OperationId,
         OrderPlan,
         StartPlan,
