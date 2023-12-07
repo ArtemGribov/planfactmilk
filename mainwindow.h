@@ -89,6 +89,7 @@ public:
     QList<QStringList> rowListStep;
     QList<QStringList> rowListRun;
     QList<QStringList> rowListProductFlow;
+    QList<QStringList> rowListStock;
     QList<QStringList> rowListFact;
     QList<QStringList> rowListFactPrevous;
 };

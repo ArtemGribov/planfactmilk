@@ -164,6 +164,7 @@ bool MainWindow::on_pushButtonStart_clicked()
     rowListStep.clear();
     rowListRun.clear();
     rowListProductFlow.clear();
+    rowListStock.clear();
     rowListFact.clear();
     rowListFactPrevous.clear();
 
@@ -657,6 +658,7 @@ bool MainWindow::prepeadTables() {
                                     case 1: rowListStep.push_back(str); break;
                                     case 2: rowListRun.push_back(str); break;
                                     case 3: rowListProductFlow.push_back(str); break;
+                                    case 4: rowListStock.push_back(str); break;
                                 }
                             }
                         }
@@ -1488,57 +1490,6 @@ void MainWindow::addSubTotalRow() {
             rMain++;
         }
     }
-
-    //Обработка последней записи
-    //Добавить пустую запись
-/*    QStringList s;
-    for(int i = 0; i < ColumnHeader.length(); i++) {
-        s.append("");
-    }
-    rowListMain.append(s);
-
-    QStringList strlist;
-    strlist << "MilkReqPlan" << "MilkReqFact" <<"SkMilkReqPlan"
-            << "SkMilkReqFact" << "CreamReqPlan" << "CreamReqFact"
-            << "MilkDelta" << "SkMilkDelta" << "CreamDelta";
-    //Обнулить цифровые значения в строке
-    foreach(QString s, strlist) {
-        rowListMain[rowListMain.length()-1][ColumnHeader.indexOf(s)] = "0";
-    }
-
-    float QtyTotalMilkPlan = 0;
-    float QtyTotalMilkFact = 0;
-    float QtyTotalSkMilkPlan = 0;
-    float QtyTotalSkMilkFact = 0;
-    float QtyTotalCreamPlan = 0;
-    float QtyTotalCreamFact = 0;
-    float QtyTotalMilkDelta = 0;
-    float QtyTotalSkMilkDelta = 0;
-    float QtyTotalCreamDelta = 0;
-
-    for(int i = rowListMain.length()-2; i >= 0; i--) {
-        if(!rowListMain[i].at(ColumnHeader.indexOf("ProductLocationId")).isEmpty()) {
-            QtyTotalMilkPlan += rowListMain[i].at(ColumnHeader.indexOf("MilkReqPlan")).toFloat();
-            QtyTotalMilkFact += rowListMain[i].at(ColumnHeader.indexOf("MilkReqFact")).toFloat();
-            QtyTotalSkMilkPlan += rowListMain[i].at(ColumnHeader.indexOf("SkMilkReqPlan")).toFloat();
-            QtyTotalSkMilkFact += rowListMain[i].at(ColumnHeader.indexOf("SkMilkReqFact")).toFloat();
-            QtyTotalCreamPlan += rowListMain[i].at(ColumnHeader.indexOf("CreamReqPlan")).toFloat();
-            QtyTotalCreamFact += rowListMain[i].at(ColumnHeader.indexOf("CreamReqFact")).toFloat();
-            QtyTotalMilkDelta += rowListMain[i].at(ColumnHeader.indexOf("MilkDelta")).toFloat();
-            QtyTotalSkMilkDelta += rowListMain[i].at(ColumnHeader.indexOf("SkMilkDelta")).toFloat();
-            QtyTotalCreamDelta += rowListMain[i].at(ColumnHeader.indexOf("CreamDelta")).toFloat();
-        }
-        else break;
-    }
-    rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("MilkReqPlan")] = QString::number(QtyTotalMilkPlan);
-    rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("MilkReqFact")] = QString::number(QtyTotalMilkFact);
-    rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("SkMilkReqPlan")] = QString::number(QtyTotalSkMilkPlan);
-    rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("SkMilkReqFact")] = QString::number(QtyTotalSkMilkFact);
-    rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("CreamReqPlan")] = QString::number(QtyTotalCreamPlan);
-    rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("CreamReqFact")] = QString::number(QtyTotalCreamFact);
-    rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("MilkDelta")] = QString::number(QtyTotalMilkDelta);
-    rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("SkMilkDelta")] = QString::number(QtyTotalSkMilkDelta);
-    rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("CreamDelta")] = QString::number(QtyTotalCreamDelta)*/;
 }
 
 
