@@ -684,13 +684,14 @@ bool MainWindow::calculation() {
     //Загрузка нормативных отклонений
     if(!loadCriteria()) { return false; }
 
+    QRegExp rxOperation("(/0020)");
+
     //Обработка данных
     for(int rStep = 1; rStep < rowListStep.length(); rStep++) {
         //Фильтр
         if(rowListStep[rStep].at(rowListStep[0].indexOf("MachineId")).left(4) == selectPlant) {
             QRegExp rxProductLocation("(CIP|3400|QI|Test)");
             QRegExp rxMachine("(ZETA|WALDNER|SELO|DARBO|TERLET)");
-            //QRegExp rxOperation("(/0020)");
             if(rxProductLocation.indexIn(rowListStep[rStep].at(rowListStep[0].indexOf("ProductLocationId"))) == -1) {
                 if(rxMachine.indexIn(rowListStep[rStep].at(rowListStep[0].indexOf("MachineId"))) == -1) {
                     //if(rxOperation.indexIn(rowListStep[rStep].at(rowListStep[0].indexOf("OperationId"))) != -1) {
@@ -1032,47 +1033,50 @@ bool MainWindow::calculation() {
                 ORDER2 = rowListFact[rFact].at(rowListFact[0].indexOf("AUFNR")).toLongLong(&ok, 10);
                 if(ok) {
                     if(ORDER1 == ORDER2) {
-                        //Факт расхода молока
-                        QString material = QString::number(rowListFact[rFact].at(rowListFact[0].indexOf("MATNR_COM")).toInt());
-                        if(isComponent("fact", "milk", material, selectPlant)) {
-                            if(rowListFact[rFact].at(rowListFact[0].indexOf("ASTTX")).left(4) == "CMPL" ||
-                            rowListFact[rFact].at(rowListFact[0].indexOf("ASTTX")).left(4) == "TECO") {
-                                SumQtyIn += -1.0 * rowListFact[rFact].at(rowListFact[0].indexOf("COM_DENMNG_KG")).toFloat();
-                            }
-                            else if(rowListFact[rFact].at(rowListFact[0].indexOf("ASTTX")).left(4) == "INTL" ||
-                            rowListFact[rFact].at(rowListFact[0].indexOf("ASTTX")).left(4) == "UNTE") {
-                                float QtyPlan;
-                                float QtyFact;
-                                float QtyDelivFact;
-                                QtyPlan = rowListMain[rMain].at(ColumnHeader.indexOf("QuantityPlan")).toFloat();
-                                QtyFact = rowListMain[rMain].at(ColumnHeader.indexOf("QuantityFact")).toFloat();
-                                QtyDelivFact = rowListMain[rMain].at(ColumnHeader.indexOf("DeliveryFact")).toFloat();
-                                float Proc;
-                                if(QtyPlan) {
-                                    if(QtyFact > QtyDelivFact)
-                                        Proc = QtyFact * 100 / QtyPlan;
-                                    else
-                                        Proc = QtyDelivFact * 100 / QtyPlan;
-                                    SumQtyIn = rowListMain[rMain].at(ColumnHeader.indexOf("MilkReqPlan")).toFloat() * Proc / 100;
+                        if(rowListMain[rMain].at(ColumnHeader.indexOf("OperationId")).isEmpty() || rxOperation.indexIn(rowListMain[rMain].at(ColumnHeader.indexOf("OperationId"))) != -1) {
+                            //Факт расхода молока
+                            QString material = QString::number(rowListFact[rFact].at(rowListFact[0].indexOf("MATNR_COM")).toInt());
+                            if(isComponent("fact", "milk", material, selectPlant)) {
+                                if(rowListFact[rFact].at(rowListFact[0].indexOf("ASTTX")).left(4) == "CMPL" ||
+                                rowListFact[rFact].at(rowListFact[0].indexOf("ASTTX")).left(4) == "TECO") {
+                                    SumQtyIn += -1.0 * rowListFact[rFact].at(rowListFact[0].indexOf("COM_DENMNG_KG")).toFloat();
                                 }
-                                else  {
-                                    SumQtyIn = 0.01;
+                                else if(rowListFact[rFact].at(rowListFact[0].indexOf("ASTTX")).left(4) == "INTL" ||
+                                rowListFact[rFact].at(rowListFact[0].indexOf("ASTTX")).left(4) == "UNTE") {
+                                    float QtyPlan;
+                                    float QtyFact;
+                                    float QtyDelivFact;
+                                    QtyPlan = rowListMain[rMain].at(ColumnHeader.indexOf("QuantityPlan")).toFloat();
+                                    QtyFact = rowListMain[rMain].at(ColumnHeader.indexOf("QuantityFact")).toFloat();
+                                    QtyDelivFact = rowListMain[rMain].at(ColumnHeader.indexOf("DeliveryFact")).toFloat();
+                                    float Proc;
+                                    if(QtyPlan) {
+                                        if(QtyFact > QtyDelivFact)
+                                            Proc = QtyFact * 100 / QtyPlan;
+                                        else
+                                            Proc = QtyDelivFact * 100 / QtyPlan;
+                                        SumQtyIn = rowListMain[rMain].at(ColumnHeader.indexOf("MilkReqPlan")).toFloat() * Proc / 100;
+                                    }
+                                    else  {
+                                        SumQtyIn = 0.01;
+                                    }
                                 }
                             }
-                        }
-                        //Факт производства молока
-                        material = QString::number(rowListFact[rFact].at(rowListFact[0].indexOf("PLNBEZ")).toInt());
-                        if(isComponent("fact", "milk", material, selectPlant)) {
-                            if(QtyOut == 0.0) {
-                                if(rowListFact[rFact].at(rowListFact[0].indexOf("ASTTX")).left(4) == "INTL" ||
-                                rowListFact[rFact].at(rowListFact[0].indexOf("ASTTX")).left(4) == "UNTE")
-                                    QtyOut = rowListFact[rFact].at(rowListFact[0].indexOf("GAMNG_KG")).toFloat();
-                                else if(rowListFact[rFact].at(rowListFact[0].indexOf("ASTTX")).left(4) == "CMPL" ||
-                                rowListFact[rFact].at(rowListFact[0].indexOf("ASTTX")).left(4) == "TECO")
-                                    QtyOut = rowListFact[rFact].at(rowListFact[0].indexOf("GWEMG_KG")).toFloat();
+                            //Факт производства молока
+                            material = QString::number(rowListFact[rFact].at(rowListFact[0].indexOf("PLNBEZ")).toInt());
+                            if(isComponent("fact", "milk", material, selectPlant)) {
+                                if(QtyOut == 0.0) {
+                                    if(rowListFact[rFact].at(rowListFact[0].indexOf("ASTTX")).left(4) == "INTL" ||
+                                    rowListFact[rFact].at(rowListFact[0].indexOf("ASTTX")).left(4) == "UNTE")
+                                        QtyOut = rowListFact[rFact].at(rowListFact[0].indexOf("GAMNG_KG")).toFloat();
+                                    else if(rowListFact[rFact].at(rowListFact[0].indexOf("ASTTX")).left(4) == "CMPL" ||
+                                    rowListFact[rFact].at(rowListFact[0].indexOf("ASTTX")).left(4) == "TECO")
+                                        QtyOut = rowListFact[rFact].at(rowListFact[0].indexOf("GWEMG_KG")).toFloat();
+                                }
                             }
                         }
                     }
+
                 }
             }
             if(rFact == rowListFact.length()-1) {
@@ -1086,62 +1090,64 @@ bool MainWindow::calculation() {
     for(int rMain = 0; rMain < rowListMain.length(); rMain++) {
         float SumQtyIn = 0.0;
         float QtyOut = 0.0;
-        for(int rFact = 1; rFact < rowListFact.length(); rFact++) {
-            bool ok;
-            long long ORDER1;
-            long long ORDER2;
-            ORDER1 = rowListMain[rMain].at(ColumnHeader.indexOf("OrderFact")).toLongLong(&ok, 10);
-            if(ok) {
-                ORDER2 = rowListFact[rFact].at(rowListFact[0].indexOf("AUFNR")).toLongLong(&ok, 10);
+            for(int rFact = 1; rFact < rowListFact.length(); rFact++) {
+                bool ok;
+                long long ORDER1;
+                long long ORDER2;
+                ORDER1 = rowListMain[rMain].at(ColumnHeader.indexOf("OrderFact")).toLongLong(&ok, 10);
                 if(ok) {
-                    if(ORDER1 == ORDER2) {
-                        //Факт расхода обрата
-                        QString material = QString::number(rowListFact[rFact].at(rowListFact[0].indexOf("MATNR_COM")).toInt());
-                        if(isComponent("fact", "skmilk", material, selectPlant)) {
-                            if(rowListFact[rFact].at(rowListFact[0].indexOf("ASTTX")).left(4) == "CMPL" ||
-                            rowListFact[rFact].at(rowListFact[0].indexOf("ASTTX")).left(4) == "TECO") {
-                                SumQtyIn += -1.0 * rowListFact[rFact].at(rowListFact[0].indexOf("COM_DENMNG_KG")).toFloat();
-                            }
-                            else if(rowListFact[rFact].at(rowListFact[0].indexOf("ASTTX")).left(4) == "INTL" ||
-                            rowListFact[rFact].at(rowListFact[0].indexOf("ASTTX")).left(4) == "UNTE") {
-                                float QtyPlan;
-                                float QtyFact;
-                                float QtyDelivFact;
-                                QtyPlan = rowListMain[rMain].at(ColumnHeader.indexOf("QuantityPlan")).toFloat();
-                                QtyFact = rowListMain[rMain].at(ColumnHeader.indexOf("QuantityFact")).toFloat();
-                                QtyDelivFact = rowListMain[rMain].at(ColumnHeader.indexOf("DeliveryFact")).toFloat();
-                                float Proc;
-                                if(QtyPlan) {
-                                    if(QtyFact > QtyDelivFact)
-                                        Proc = QtyFact * 100 / QtyPlan;
-                                    else
-                                        Proc = QtyDelivFact * 100 / QtyPlan;
-                                    SumQtyIn = rowListMain[rMain].at(ColumnHeader.indexOf("SkMilkReqPlan")).toFloat() * Proc / 100;
+                    ORDER2 = rowListFact[rFact].at(rowListFact[0].indexOf("AUFNR")).toLongLong(&ok, 10);
+                    if(ok) {
+                        if(ORDER1 == ORDER2) {
+                            if(rowListMain[rMain].at(ColumnHeader.indexOf("OperationId")).isEmpty() || rxOperation.indexIn(rowListMain[rMain].at(ColumnHeader.indexOf("OperationId"))) != -1) {
+                                //Факт расхода обрата
+                                QString material = QString::number(rowListFact[rFact].at(rowListFact[0].indexOf("MATNR_COM")).toInt());
+                                if(isComponent("fact", "skmilk", material, selectPlant)) {
+                                    if(rowListFact[rFact].at(rowListFact[0].indexOf("ASTTX")).left(4) == "CMPL" ||
+                                    rowListFact[rFact].at(rowListFact[0].indexOf("ASTTX")).left(4) == "TECO") {
+                                        SumQtyIn += -1.0 * rowListFact[rFact].at(rowListFact[0].indexOf("COM_DENMNG_KG")).toFloat();
+                                    }
+                                    else if(rowListFact[rFact].at(rowListFact[0].indexOf("ASTTX")).left(4) == "INTL" ||
+                                    rowListFact[rFact].at(rowListFact[0].indexOf("ASTTX")).left(4) == "UNTE") {
+                                        float QtyPlan;
+                                        float QtyFact;
+                                        float QtyDelivFact;
+                                        QtyPlan = rowListMain[rMain].at(ColumnHeader.indexOf("QuantityPlan")).toFloat();
+                                        QtyFact = rowListMain[rMain].at(ColumnHeader.indexOf("QuantityFact")).toFloat();
+                                        QtyDelivFact = rowListMain[rMain].at(ColumnHeader.indexOf("DeliveryFact")).toFloat();
+                                        float Proc;
+                                        if(QtyPlan) {
+                                            if(QtyFact > QtyDelivFact)
+                                                Proc = QtyFact * 100 / QtyPlan;
+                                            else
+                                                Proc = QtyDelivFact * 100 / QtyPlan;
+                                            SumQtyIn = rowListMain[rMain].at(ColumnHeader.indexOf("SkMilkReqPlan")).toFloat() * Proc / 100;
+                                        }
+                                        else  {
+                                            SumQtyIn = 0.01;
+                                        }
+                                    }
                                 }
-                                else  {
-                                    SumQtyIn = 0.01;
+                                //Факт производства обрата
+                                material = QString::number(rowListFact[rFact].at(rowListFact[0].indexOf("PLNBEZ")).toInt());
+                                if(isComponent("fact", "skmilk", material, selectPlant)) {
+                                    if(QtyOut == 0.0) {
+                                        if(rowListFact[rFact].at(rowListFact[0].indexOf("ASTTX")).left(4) == "INTL" ||
+                                        rowListFact[rFact].at(rowListFact[0].indexOf("ASTTX")).left(4) == "UNTE")
+                                            QtyOut = rowListFact[rFact].at(rowListFact[0].indexOf("GAMNG_KG")).toFloat();
+                                        else if(rowListFact[rFact].at(rowListFact[0].indexOf("ASTTX")).left(4) == "CMPL" ||
+                                        rowListFact[rFact].at(rowListFact[0].indexOf("ASTTX")).left(4) == "TECO")
+                                            QtyOut = rowListFact[rFact].at(rowListFact[0].indexOf("GWEMG_KG")).toFloat();
+                                    }
                                 }
-                            }
-                        }
-                        //Факт производства обрата
-                        material = QString::number(rowListFact[rFact].at(rowListFact[0].indexOf("PLNBEZ")).toInt());
-                        if(isComponent("fact", "skmilk", material, selectPlant)) {
-                            if(QtyOut == 0.0) {
-                                if(rowListFact[rFact].at(rowListFact[0].indexOf("ASTTX")).left(4) == "INTL" ||
-                                rowListFact[rFact].at(rowListFact[0].indexOf("ASTTX")).left(4) == "UNTE")
-                                    QtyOut = rowListFact[rFact].at(rowListFact[0].indexOf("GAMNG_KG")).toFloat();
-                                else if(rowListFact[rFact].at(rowListFact[0].indexOf("ASTTX")).left(4) == "CMPL" ||
-                                rowListFact[rFact].at(rowListFact[0].indexOf("ASTTX")).left(4) == "TECO")
-                                    QtyOut = rowListFact[rFact].at(rowListFact[0].indexOf("GWEMG_KG")).toFloat();
                             }
                         }
                     }
                 }
+                if(rFact == rowListFact.length()-1) {
+                    rowListMain[rMain] << QString::number(SumQtyIn + QtyOut);
+                }
             }
-            if(rFact == rowListFact.length()-1) {
-                rowListMain[rMain] << QString::number(SumQtyIn + QtyOut);
-            }
-        }
     }
 
 
@@ -1149,62 +1155,64 @@ bool MainWindow::calculation() {
     for(int rMain = 0; rMain < rowListMain.length(); rMain++) {
         float SumQtyIn = 0.0;
         float QtyOut = 0.0;
-        for(int rFact = 1; rFact < rowListFact.length(); rFact++) {
-            bool ok;
-            long long ORDER1;
-            long long ORDER2;
-            ORDER1 = rowListMain[rMain].at(ColumnHeader.indexOf("OrderFact")).toLongLong(&ok, 10);
-            if(ok) {
-                ORDER2 = rowListFact[rFact].at(rowListFact[0].indexOf("AUFNR")).toLongLong(&ok, 10);
+            for(int rFact = 1; rFact < rowListFact.length(); rFact++) {
+                bool ok;
+                long long ORDER1;
+                long long ORDER2;
+                ORDER1 = rowListMain[rMain].at(ColumnHeader.indexOf("OrderFact")).toLongLong(&ok, 10);
                 if(ok) {
-                    if(ORDER1 == ORDER2) {
-                        //Факт расхода сливок
-                        QString material = QString::number(rowListFact[rFact].at(rowListFact[0].indexOf("MATNR_COM")).toInt());
-                        if(isComponent("fact", "cream", material, selectPlant)) {
-                            if(rowListFact[rFact].at(rowListFact[0].indexOf("ASTTX")).left(4) == "CMPL" ||
-                            rowListFact[rFact].at(rowListFact[0].indexOf("ASTTX")).left(4) == "TECO") {
-                                SumQtyIn += -1.0 * rowListFact[rFact].at(rowListFact[0].indexOf("COM_DENMNG_KG")).toFloat();
-                            }
-                            else if(rowListFact[rFact].at(rowListFact[0].indexOf("ASTTX")).left(4) == "INTL" ||
-                            rowListFact[rFact].at(rowListFact[0].indexOf("ASTTX")).left(4) == "UNTE") {
-                                float QtyPlan;
-                                float QtyFact;
-                                float QtyDelivFact;
-                                QtyPlan = rowListMain[rMain].at(ColumnHeader.indexOf("QuantityPlan")).toFloat();
-                                QtyFact = rowListMain[rMain].at(ColumnHeader.indexOf("QuantityFact")).toFloat();
-                                QtyDelivFact = rowListMain[rMain].at(ColumnHeader.indexOf("DeliveryFact")).toFloat();
-                                float Proc;
-                                if(QtyPlan) {
-                                    if(QtyFact > QtyDelivFact)
-                                        Proc = QtyFact * 100 / QtyPlan;
-                                    else
-                                        Proc = QtyDelivFact * 100 / QtyPlan;
-                                    SumQtyIn = rowListMain[rMain].at(ColumnHeader.indexOf("CreamReqPlan")).toFloat() * Proc / 100;
+                    ORDER2 = rowListFact[rFact].at(rowListFact[0].indexOf("AUFNR")).toLongLong(&ok, 10);
+                    if(ok) {
+                        if(ORDER1 == ORDER2) {
+                            if(rowListMain[rMain].at(ColumnHeader.indexOf("OperationId")).isEmpty() || rxOperation.indexIn(rowListMain[rMain].at(ColumnHeader.indexOf("OperationId"))) != -1) {
+                                //Факт расхода сливок
+                                QString material = QString::number(rowListFact[rFact].at(rowListFact[0].indexOf("MATNR_COM")).toInt());
+                                if(isComponent("fact", "cream", material, selectPlant)) {
+                                    if(rowListFact[rFact].at(rowListFact[0].indexOf("ASTTX")).left(4) == "CMPL" ||
+                                    rowListFact[rFact].at(rowListFact[0].indexOf("ASTTX")).left(4) == "TECO") {
+                                        SumQtyIn += -1.0 * rowListFact[rFact].at(rowListFact[0].indexOf("COM_DENMNG_KG")).toFloat();
+                                    }
+                                    else if(rowListFact[rFact].at(rowListFact[0].indexOf("ASTTX")).left(4) == "INTL" ||
+                                    rowListFact[rFact].at(rowListFact[0].indexOf("ASTTX")).left(4) == "UNTE") {
+                                        float QtyPlan;
+                                        float QtyFact;
+                                        float QtyDelivFact;
+                                        QtyPlan = rowListMain[rMain].at(ColumnHeader.indexOf("QuantityPlan")).toFloat();
+                                        QtyFact = rowListMain[rMain].at(ColumnHeader.indexOf("QuantityFact")).toFloat();
+                                        QtyDelivFact = rowListMain[rMain].at(ColumnHeader.indexOf("DeliveryFact")).toFloat();
+                                        float Proc;
+                                        if(QtyPlan) {
+                                            if(QtyFact > QtyDelivFact)
+                                                Proc = QtyFact * 100 / QtyPlan;
+                                            else
+                                                Proc = QtyDelivFact * 100 / QtyPlan;
+                                            SumQtyIn = rowListMain[rMain].at(ColumnHeader.indexOf("CreamReqPlan")).toFloat() * Proc / 100;
+                                        }
+                                        else  {
+                                            SumQtyIn = 0.01;
+                                        }
+                                    }
                                 }
-                                else  {
-                                    SumQtyIn = 0.01;
+                                //Факт производства сливок
+                                material = QString::number(rowListFact[rFact].at(rowListFact[0].indexOf("PLNBEZ")).toInt());
+                                if(isComponent("fact", "cream", material, selectPlant)) {
+                                    if(QtyOut == 0.0) {
+                                        if(rowListFact[rFact].at(rowListFact[0].indexOf("ASTTX")).left(4) == "INTL" ||
+                                        rowListFact[rFact].at(rowListFact[0].indexOf("ASTTX")).left(4) == "UNTE")
+                                            QtyOut = rowListFact[rFact].at(rowListFact[0].indexOf("GAMNG_KG")).toFloat();
+                                        else if(rowListFact[rFact].at(rowListFact[0].indexOf("ASTTX")).left(4) == "CMPL" ||
+                                        rowListFact[rFact].at(rowListFact[0].indexOf("ASTTX")).left(4) == "TECO")
+                                            QtyOut = rowListFact[rFact].at(rowListFact[0].indexOf("GWEMG_KG")).toFloat();
+                                    }
                                 }
-                            }
-                        }
-                        //Факт производства сливок
-                        material = QString::number(rowListFact[rFact].at(rowListFact[0].indexOf("PLNBEZ")).toInt());
-                        if(isComponent("fact", "cream", material, selectPlant)) {
-                            if(QtyOut == 0.0) {
-                                if(rowListFact[rFact].at(rowListFact[0].indexOf("ASTTX")).left(4) == "INTL" ||
-                                rowListFact[rFact].at(rowListFact[0].indexOf("ASTTX")).left(4) == "UNTE")
-                                    QtyOut = rowListFact[rFact].at(rowListFact[0].indexOf("GAMNG_KG")).toFloat();
-                                else if(rowListFact[rFact].at(rowListFact[0].indexOf("ASTTX")).left(4) == "CMPL" ||
-                                rowListFact[rFact].at(rowListFact[0].indexOf("ASTTX")).left(4) == "TECO")
-                                    QtyOut = rowListFact[rFact].at(rowListFact[0].indexOf("GWEMG_KG")).toFloat();
                             }
                         }
                     }
                 }
+                if(rFact == rowListFact.length()-1) {
+                    rowListMain[rMain] << QString::number(SumQtyIn + QtyOut);
+                }
             }
-            if(rFact == rowListFact.length()-1) {
-                rowListMain[rMain] << QString::number(SumQtyIn + QtyOut);
-            }
-        }
     }
 
     //Фильтр по молочным компонентам
@@ -1767,10 +1775,10 @@ void MainWindow::slicetime() {
                 Duration = start.secsTo(end);
 
                 //Плановое кол-во
-                Qty = rowListMain[rMain].at(ColumnHeader.indexOf("QuantityPlan")).toFloat();
-                QtyInSec = 1 * Qty / Duration;
-                Qty = start.secsTo(QDateTime(selectDate.addDays(1))) * QtyInSec;
-                rowListMain[rMain][ColumnHeader.indexOf("QuantityPlan")] = QString::number(Qty);
+                //Qty = rowListMain[rMain].at(ColumnHeader.indexOf("QuantityPlan")).toFloat();
+                //QtyInSec = 1 * Qty / Duration;
+                //Qty = start.secsTo(QDateTime(selectDate.addDays(1))) * QtyInSec;
+                //rowListMain[rMain][ColumnHeader.indexOf("QuantityPlan")] = QString::number(Qty);
 
                 //Плановый расход молока
                 Qty = rowListMain[rMain].at(ColumnHeader.indexOf("MilkReqPlan")).toFloat();
@@ -1813,10 +1821,10 @@ void MainWindow::slicetime() {
                 Duration = start.secsTo(end);
 
                 //Кол-во заказа
-                Qty = rowListMain[rMain].at(ColumnHeader.indexOf("QuantityFact")).toFloat();
-                QtyInSec = 1 * Qty / Duration;
-                Qty = start.secsTo(QDateTime(selectDate.addDays(1))) * QtyInSec;
-                rowListMain[rMain][ColumnHeader.indexOf("QuantityFact")] = QString::number(Qty);
+                //Qty = rowListMain[rMain].at(ColumnHeader.indexOf("QuantityFact")).toFloat();
+                //QtyInSec = 1 * Qty / Duration;
+                //Qty = start.secsTo(QDateTime(selectDate.addDays(1))) * QtyInSec;
+                //rowListMain[rMain][ColumnHeader.indexOf("QuantityFact")] = QString::number(Qty);
 
                 //Фактический расход молока
                 Qty = rowListMain[rMain].at(ColumnHeader.indexOf("MilkReqFact")).toFloat();
