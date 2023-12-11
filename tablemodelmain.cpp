@@ -51,21 +51,16 @@ QVariant TableModelMain::data(const QModelIndex &index, int role) const
     //Цвет фона
     if(role == Qt::BackgroundColorRole)
     {
-        //для заказов которые были скорректированы
+        //Для заказов которые были скорректированы
         if(checkQuestion(rowList[index.row()][Marker]) == "?") {
-            if((index.column() == MilkReqFact) ||
+            if((index.column() == DeliveryFact) ||
+            (index.column() == MilkReqFact) ||
             (index.column() == SkMilkReqFact) ||
             (index.column() == CreamReqFact) ||
             (index.column() == MilkDelta) ||
             (index.column() == SkMilkDelta) ||
             (index.column() == CreamDelta)) {
                 return QColor(250,200,250);
-            }
-        }
-        //Для заказов которые были скорректированы
-        else if(checkQuestion(rowList[index.row()][Marker]) == "!") {
-            if(index.column() == Marker) {
-                return QColor(25,25,25);
             }
         }
 

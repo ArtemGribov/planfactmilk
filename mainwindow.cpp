@@ -19,8 +19,8 @@ MainWindow::MainWindow(QWidget *parent)
     version = "2.3.0";
 
     //Дата
-    //ui->dateEdit->setDate(QDateTime::currentDateTime().date());
-    ui->dateEdit->setDate(QDate(2023, 11, 22));
+    ui->dateEdit->setDate(QDateTime::currentDateTime().date());
+    //ui->dateEdit->setDate(QDate(2023, 11, 22));
 
     //Инициализация дисков для поиска маршрута
     const QStringList lstDisk = { "D", "C", "E" };
@@ -731,12 +731,13 @@ bool MainWindow::calculation() {
 
                         //Версия
                         if(rowListStep[rStep].at(rowListStep[0].indexOf("OperationId")).left(4) != "PRO/") {
-                            s << rowListStep[rStep].at(rowListStep[0].indexOf("OperationId")).left(4);
+                            if(rowListStep[rStep].at(rowListStep[0].indexOf("OperationId")).indexOf("/") != -1) {
+                                int Pos = rowListStep[rStep].at(rowListStep[0].indexOf("OperationId")).indexOf("/");
+                                s << rowListStep[rStep].at(rowListStep[0].indexOf("OperationId")).left(Pos);
+                            }
+                            else s << "";
                         }
-                        else
-                        {
-                            s << "";
-                        }
+                        else s << "";
 
                         //Операция
                         s << rowListStep[rStep].at(rowListStep[0].indexOf("OperationId"));
@@ -924,13 +925,7 @@ bool MainWindow::calculation() {
                         s << rowListFact[rFact].at(rowListFact[0].indexOf("MATXT"));
 
                         //Маркер
-                        if(rowListFact[rFact].at(rowListFact[0].indexOf("ASTTX")).left(4) == "INTL"
-                        || rowListFact[rFact].at(rowListFact[0].indexOf("ASTTX")).left(4) == "UNTE") {
-                            s << "?";
-                        }
-                        else {
-                            s << "";
-                        }
+                        s << "";
 
                         //ВИ
                         s << rowListFact[rFact].at(rowListFact[0].indexOf("VERID"));
@@ -960,8 +955,6 @@ bool MainWindow::calculation() {
                             s << dt.toString("dd.MM.yyyy hh:mm:ss");
 
                         //Проверить что изменилось в заказе относительно предыдущего снэпшота
-                        //CheckChangedOrder();
-                        //PRO Кол-во
                         if(rowListFact[rFact].at(rowListFact[0].indexOf("ASTTX")).left(4) == "CMPL" ||
                         rowListFact[rFact].at(rowListFact[0].indexOf("ASTTX")).left(4) == "TECO") {
                             QString ORDER2 = "";
@@ -969,24 +962,26 @@ bool MainWindow::calculation() {
                                 if(ORDER2.isEmpty() || ORDER2 != rowListFactPrevous[rFactPrev].at(rowListFactPrevous[0].indexOf("AUFNR"))) {
                                     ORDER2 = rowListFactPrevous[rFactPrev].at(rowListFactPrevous[0].indexOf("AUFNR"));
                                     if(ORDER.toLongLong() == ORDER2.toLongLong()) {
-                                        //qDebug() << rFactPrev << rFact << rowListFactPrevous[rFactPrev].at(rowListFactPrevous[0].indexOf("ASTTX")).left(4) << rowListFact[rFact].at(rowListFact[0].indexOf("ASTTX")).left(4);
+
                                         //PRO Кол-во
                                         float Qty = rowListFact[rFact].at(rowListFact[0].indexOf("GAMNG_KG")).toFloat();
                                         float QtyPrev = rowListFactPrevous[rFactPrev].at(rowListFactPrevous[0].indexOf("GAMNG_KG")).toFloat();
-                                        //Внести маркер
-                                        //if((Qty - QtyPrev) == 0) {
-                                        //    s[ColumnHeader.indexOf("Marker")].append("!");
-                                        //}
                                         s << QString::number(Qty - QtyPrev);
 
                                         //Поставка
                                         Qty = rowListFact[rFact].at(rowListFact[0].indexOf("GWEMG_KG")).toFloat();
                                         QtyPrev = rowListFactPrevous[rFactPrev].at(rowListFactPrevous[0].indexOf("GWEMG_KG")).toFloat();
                                         //Внести маркер
-                                        if((Qty - QtyPrev) == 0) {
+                                        if((Qty - QtyPrev) != 0) {
+                                            s << QString::number(Qty - QtyPrev);
+                                            //Маркер для сигнала, что заказ был изменен
+                                            s[ColumnHeader.indexOf("Marker")].append("?");
+                                        }
+                                        else {
+                                            s << QString::number(Qty - QtyPrev);
+                                            //Маркер для сигнала, что заказ не был изменен
                                             s[ColumnHeader.indexOf("Marker")].append("!");
                                         }
-                                        s << QString::number(Qty - QtyPrev);
                                         break;
                                     }
                                 }
@@ -998,7 +993,6 @@ bool MainWindow::calculation() {
                                 if(ORDER2.isEmpty() || ORDER2 != rowListFactPrevous[rFactPrev].at(rowListFactPrevous[0].indexOf("AUFNR"))) {
                                     ORDER2 = rowListFactPrevous[rFactPrev].at(rowListFactPrevous[0].indexOf("AUFNR"));
                                     if(ORDER.toLongLong() == ORDER2.toLongLong()) {
-                                        //qDebug() << rFactPrev << rFact << rowListFactPrevous[rFactPrev].at(rowListFactPrevous[0].indexOf("ASTTX")).left(4) << rowListFact[rFact].at(rowListFact[0].indexOf("ASTTX")).left(4);
 
                                         float Qty = rowListFact[rFact].at(rowListFact[0].indexOf("GAMNG_KG")).toFloat();
                                         float QtyPrev = rowListFactPrevous[rFactPrev].at(rowListFactPrevous[0].indexOf("GAMNG_KG")).toFloat();
@@ -1397,7 +1391,8 @@ bool MainWindow::calculation() {
     ui->tableView->setModel(model);
     ui->tableView->hideColumn(0);
     ui->tableView->hideColumn(1);
-    //ui->tableView->hideColumn(5);
+    ui->tableView->hideColumn(5);
+    ui->tableView->hideColumn(7);
 
     //Размеры
     ui->tableView->resizeColumnsToContents();
