@@ -32,7 +32,10 @@ public:
     QString findDirFact(const QDir &dir);
     bool loadCompopentsData();
     bool loadCriteria();
-    bool isComponent(QString Category, QString Type, QString Material, QString Plant);
+    bool isComponent(const QString *Category,
+                     const QString *Type,
+                     const QString *Material,
+                     const QString *Plant);
     void addSubTotalRow();
     void addTotalRow();
     void deltaTotalStock(QString type);

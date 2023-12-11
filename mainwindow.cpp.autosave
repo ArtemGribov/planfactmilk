@@ -19,8 +19,8 @@ MainWindow::MainWindow(QWidget *parent)
     version = "2.3.0";
 
     //Дата
-    //ui->dateEdit->setDate(QDateTime::currentDateTime().date());
-    ui->dateEdit->setDate(QDate(2023, 11, 22));
+    ui->dateEdit->setDate(QDateTime::currentDateTime().date());
+    //ui->dateEdit->setDate(QDate(2023, 11, 22));
 
     //Инициализация дисков для поиска маршрута
     const QStringList lstDisk = { "D", "C", "E" };

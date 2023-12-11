@@ -30,11 +30,14 @@ int TableModelMain::columnCount(const QModelIndex &/*parent*/) const
 
 
 //для заказов которые были скорректированы
-bool checkQuestion(QString str) {
-    if(str == "?") {
-        return true;
+QString checkQuestion(QString str) {
+    if(str.indexOf("?") != -1) {
+        return "?";
     }
-    return false;
+    if(str.indexOf("!") != -1) {
+        return "!";
+    }
+    return QString();
 }
 
 QVariant TableModelMain::data(const QModelIndex &index, int role) const
@@ -49,7 +52,7 @@ QVariant TableModelMain::data(const QModelIndex &index, int role) const
     if(role == Qt::BackgroundColorRole)
     {
         //для заказов которые были скорректированы
-        if(checkQuestion(rowList[index.row()][Version].left(1))) {
+        if(checkQuestion(rowList[index.row()][Marker]) == "?") {
             if((index.column() == MilkReqFact) ||
             (index.column() == SkMilkReqFact) ||
             (index.column() == CreamReqFact) ||
@@ -57,6 +60,12 @@ QVariant TableModelMain::data(const QModelIndex &index, int role) const
             (index.column() == SkMilkDelta) ||
             (index.column() == CreamDelta)) {
                 return QColor(250,200,250);
+            }
+        }
+        //Для заказов которые были скорректированы
+        else if(checkQuestion(rowList[index.row()][Marker]) == "!") {
+            if(index.column() == Marker) {
+                return QColor(25,25,25);
             }
         }
 
@@ -211,6 +220,7 @@ QVariant TableModelMain::headerData(int section, Qt::Orientation orientation,
     case MachineId: return "Машина";
     case ProductLocationId: return "Код";
     case Description: return "Описание";
+    case Marker: return "Маркер";
     case Version: return "Версия";
     case OperationId: return "Операция";
     case OrderPlan: return "Номер план";
