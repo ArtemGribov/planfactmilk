@@ -627,7 +627,7 @@ bool MainWindow::prepeadTables() {
         QString strdata = in.readAll();
         QStringList strlistdata = strdata.split('\n');
         foreach(QString fileName, strlistdata) {
-            QStringList listSheet = { "Product", "Step", "Run", "ProductFlow" };
+            QStringList listSheet = { "Product", "Step", "Run", "ProductFlow", "Stock" };
             for(int i = 0; i < listSheet.length(); i++) {
                 if(fileName == listSheet[i]) {
                     QFile f(pathdestin + fileName);
@@ -1301,6 +1301,122 @@ bool MainWindow::calculation() {
         }
     }
 
+
+
+    //Поставки молока
+    //Добавить пустую запись
+    QStringList s;
+    for(int i = 0; i < ColumnHeader.length(); i++) {
+        s.append("");
+    }
+    rowListMain.append(s);
+    QStringList strlist;
+    strlist << "MilkReqPlan" << "MilkReqFact"
+            <<"SkMilkReqPlan" << "SkMilkReqFact"
+            << "CreamReqPlan" << "CreamReqFact";
+    //Обнулить цифровые значения в строке
+    foreach(QString s, strlist) {
+        rowListMain[rowListMain.length()-1][ColumnHeader.indexOf(s)] = "0";
+    }
+    float Qty = 0.0;
+    for(int rStock = 1; rStock < rowListStock.length(); rStock++) {
+        const QString cat = "plan";
+        const QString type = "milk";
+        const QString mat = rowListStock[rStock].at(rowListStock[0].indexOf("ProductId"));
+        if(isComponent(&cat, &type, &mat, &selectPlant)) {
+            if(rowListStock[rStock].at(rowListStock[0].indexOf("StockType")) == "movement") {
+                if(rowListStock[rStock].at(rowListStock[0].indexOf("ToWhId")).left(4) == selectPlant) {
+                    QDateTime dt;
+                    dt = QDateTime::fromString(rowListStock[rStock].at(rowListStock[0].indexOf("StartDate")), "yyyy-MM-dd hh:mm:ss");
+                    if(dt < QDateTime(selectDate.addDays(1))) {
+                        Qty += rowListStock[rStock].at(rowListStock[0].indexOf("Quantity")).toFloat();
+                    }
+                }
+            }
+        }
+    }
+    rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("ProductLocationId")] = "milk";
+    rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("StartPlan")] = selectDate.toString("dd.MM.yyyy 00:00:00");
+    rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("EndPlan")] = selectDate.toString("dd.MM.yyyy 00:00:01");
+    rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("OrderPlan")] = "ПРИВОЗ";
+    rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("QuantityPlan")] = QString::number(Qty);
+    rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("MilkReqPlan")] = QString::number(Qty);
+
+    //Поставки обрата
+    //Добавить пустую запись
+    for(int i = 0; i < ColumnHeader.length(); i++) {
+        s.append("");
+    }
+    rowListMain.append(s);
+    strlist << "MilkReqPlan" << "MilkReqFact"
+            <<"SkMilkReqPlan" << "SkMilkReqFact"
+            << "CreamReqPlan" << "CreamReqFact";
+    //Обнулить цифровые значения в строке
+    foreach(QString s, strlist) {
+        rowListMain[rowListMain.length()-1][ColumnHeader.indexOf(s)] = "0";
+    }
+    Qty = 0.0;
+    for(int rStock = 1; rStock < rowListStock.length(); rStock++) {
+        const QString cat = "plan";
+        const QString type = "skmilk";
+        const QString mat = rowListStock[rStock].at(rowListStock[0].indexOf("ProductId"));
+        if(isComponent(&cat, &type, &mat, &selectPlant)) {
+            if(rowListStock[rStock].at(rowListStock[0].indexOf("StockType")) == "movement") {
+                if(rowListStock[rStock].at(rowListStock[0].indexOf("ToWhId")).left(4) == selectPlant) {
+                    QDateTime dt;
+                    dt = QDateTime::fromString(rowListStock[rStock].at(rowListStock[0].indexOf("StartDate")), "yyyy-MM-dd hh:mm:ss");
+                    if(dt < QDateTime(selectDate.addDays(1))) {
+                        Qty += rowListStock[rStock].at(rowListStock[0].indexOf("Quantity")).toFloat();
+                    }
+                }
+            }
+        }
+    }
+    rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("ProductLocationId")] = "skimmed milk";
+    rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("StartPlan")] = selectDate.toString("dd.MM.yyyy 00:00:00");
+    rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("EndPlan")] = selectDate.toString("dd.MM.yyyy 00:00:01");
+    rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("OrderPlan")] = "ПРИВОЗ";
+    rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("QuantityPlan")] = QString::number(Qty);
+    rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("SkMilkReqPlan")] = QString::number(Qty);
+
+
+    //Поставки сливок
+    //Добавить пустую запись
+    for(int i = 0; i < ColumnHeader.length(); i++) {
+        s.append("");
+    }
+    rowListMain.append(s);
+    strlist << "MilkReqPlan" << "MilkReqFact"
+            <<"SkMilkReqPlan" << "SkMilkReqFact"
+            << "CreamReqPlan" << "CreamReqFact";
+    //Обнулить цифровые значения в строке
+    foreach(QString s, strlist) {
+        rowListMain[rowListMain.length()-1][ColumnHeader.indexOf(s)] = "0";
+    }
+    Qty = 0.0;
+    for(int rStock = 1; rStock < rowListStock.length(); rStock++) {
+        const QString cat = "plan";
+        const QString type = "cream";
+        const QString mat = rowListStock[rStock].at(rowListStock[0].indexOf("ProductId"));
+        if(isComponent(&cat, &type, &mat, &selectPlant)) {
+            if(rowListStock[rStock].at(rowListStock[0].indexOf("StockType")) == "movement") {
+                if(rowListStock[rStock].at(rowListStock[0].indexOf("ToWhId")).left(4) == selectPlant) {
+                    QDateTime dt;
+                    dt = QDateTime::fromString(rowListStock[rStock].at(rowListStock[0].indexOf("StartDate")), "yyyy-MM-dd hh:mm:ss");
+                    if(dt < QDateTime(selectDate.addDays(1))) {
+                        Qty += rowListStock[rStock].at(rowListStock[0].indexOf("Quantity")).toFloat();
+                    }
+                }
+            }
+        }
+    }
+    rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("ProductLocationId")] = "Сливки";
+    rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("StartPlan")] = selectDate.toString("dd.MM.yyyy 00:00:00");
+    rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("EndPlan")] = selectDate.toString("dd.MM.yyyy 00:00:01");
+    rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("OrderPlan")] = "ПРИВОЗ";
+    rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("QuantityPlan")] = QString::number(Qty);
+    rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("MilkReqPlan")] = QString::number(Qty);
+
     //Фильтр по молочным компонентам
     for(int rMain = 0; rMain < rowListMain.length(); rMain++) {
         if(rowListMain[rMain].at(ColumnHeader.indexOf("MilkReqPlan")) == "0" &&
@@ -1471,8 +1587,8 @@ void MainWindow::deltaTotalStock(QString type) {
     //Дельта по молоку
     if(type == "milk") {
         for(int rMain = 0; rMain < rowListMain.length(); rMain++) {
-            float QtyPlan;
-            float QtyFact;
+            float QtyPlan = 0;
+            float QtyFact = 0;
             QtyPlan = rowListMain[rMain].at(ColumnHeader.indexOf("MilkReqPlan")).toFloat();
             QtyFact = rowListMain[rMain].at(ColumnHeader.indexOf("MilkReqFact")).toFloat();
             rowListMain[rMain] << QString::number(-1.0*(QtyPlan - QtyFact));
@@ -1481,8 +1597,8 @@ void MainWindow::deltaTotalStock(QString type) {
     //Дельта по обрату
     if(type == "skmilk") {
         for(int rMain = 0; rMain < rowListMain.length(); rMain++) {
-            float QtyPlan;
-            float QtyFact;
+            float QtyPlan = 0;
+            float QtyFact = 0;
             QtyPlan = rowListMain[rMain].at(ColumnHeader.indexOf("SkMilkReqPlan")).toFloat();
             QtyFact = rowListMain[rMain].at(ColumnHeader.indexOf("SkMilkReqFact")).toFloat();
             rowListMain[rMain] << QString::number(-1.0*(QtyPlan - QtyFact));
@@ -1491,8 +1607,8 @@ void MainWindow::deltaTotalStock(QString type) {
     //Дельта по сливкам
     if(type == "cream") {
         for(int rMain = 0; rMain < rowListMain.length(); rMain++) {
-            float QtyPlan;
-            float QtyFact;
+            float QtyPlan = 0;
+            float QtyFact = 0;
             QtyPlan = rowListMain[rMain].at(ColumnHeader.indexOf("CreamReqPlan")).toFloat();
             QtyFact = rowListMain[rMain].at(ColumnHeader.indexOf("CreamReqFact")).toFloat();
             rowListMain[rMain] << QString::number(-1.0*(QtyPlan - QtyFact));
