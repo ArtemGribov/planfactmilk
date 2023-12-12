@@ -1407,7 +1407,7 @@ bool MainWindow::calculation() {
     rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("EndPlan")] = selectDate.toString("dd.MM.yyyy 23:59:59");
     rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("OrderPlan")] = "ПРИВОЗ";
     rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("QuantityPlan")] = QString::number(Qty);
-    rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("MilkReqPlan")] = QString::number(Qty);
+    rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("CreamReqPlan")] = QString::number(Qty);
 
     //Фильтр по молочным компонентам
     for(int rMain = 0; rMain < rowListMain.length(); rMain++) {
