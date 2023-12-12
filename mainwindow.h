@@ -74,6 +74,7 @@ private:
     QString pathFactFilePrevious;
     int timerId;
     QString namefileplanmask;
+    QString internalpathdirfact;
     QStringList admin;
     QStringList user;
 

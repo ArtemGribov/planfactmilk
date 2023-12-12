@@ -179,6 +179,7 @@ bool MainWindow::on_pushButtonStart_clicked()
 
     pathdirplan.clear();
     namefileplanmask.clear();
+    internalpathdirfact.clear();
     user.clear();
     admin.clear();
 
@@ -251,6 +252,10 @@ bool MainWindow::on_pushButtonStart_clicked()
                     //Маска файла с планом
                     if(strlist[0] == "namefileplanmask") {
                         namefileplanmask = strlist[1];
+                    }
+                    //Внутренняя директория факта
+                    if(strlist[0] == "internalpathdirfact") {
+                        internalpathdirfact = strlist[1];
                     }
                     //Список админов
                     if(strlist[0] == "admin") {
@@ -415,13 +420,13 @@ bool MainWindow::findFileFact() {
 
     QStringList listFiles;
     //Поиск файла с фактом
-    listFiles = QDir(pathFact + "/ZLRUOPS_TRN_PRORD/" + selectPlant).entryList(QStringList()
-                << "ZLRUOPS_TRN_PRORD_" + selectDate.toString("dd.MM.yyyy") + "_21_??_??.csv",
+    listFiles = QDir(pathFact + "/" + internalpathdirfact + "/" + selectPlant).entryList(QStringList()
+                << internalpathdirfact + "_" + selectDate.toString("dd.MM.yyyy") + "_21_??_??.csv",
                 QDir::Files);
     if(!listFiles.isEmpty()) {
         fileFact = listFiles[0];
         //Записать полный путь к файлу
-        pathFactFile = pathFact + "/ZLRUOPS_TRN_PRORD/" + selectPlant + "/" + fileFact;
+        pathFactFile = pathFact + "/" + internalpathdirfact + "/" + selectPlant + "/" + fileFact;
     }
     else {
         labelstatus->setText("Ошибка. Фактические данные не найдены.");
@@ -429,13 +434,13 @@ bool MainWindow::findFileFact() {
     }
     listFiles.clear();
     //Поиск прошлого файла с фактом
-    listFiles = QDir(pathFact + "/ZLRUOPS_TRN_PRORD/" + selectPlant).entryList(QStringList()
-                << "ZLRUOPS_TRN_PRORD_" + selectDate.addDays(-1).toString("dd.MM.yyyy") + "_21_??_??.csv",
+    listFiles = QDir(pathFact + "/" + internalpathdirfact + "/" + selectPlant).entryList(QStringList()
+                << internalpathdirfact + "_" + selectDate.addDays(-1).toString("dd.MM.yyyy") + "_21_??_??.csv",
                 QDir::Files);
     if(!listFiles.isEmpty()) {
         fileFactPrevious = listFiles[0];
         //Записать полный путь к файлу
-        pathFactFilePrevious = pathFact + "/ZLRUOPS_TRN_PRORD/" + selectPlant + "/" + fileFactPrevious;
+        pathFactFilePrevious = pathFact + "/" + internalpathdirfact + "/" + selectPlant + "/" + fileFactPrevious;
     }
     else {
         QMessageBox::warning(0,"Не найден факт предыдущего дня", "Внимание, часть фактических данных найти не удалось.\n"
@@ -446,7 +451,7 @@ bool MainWindow::findFileFact() {
 }
 
 
-//Загрузка фактические данных
+//Загрузка фактических данных
 bool MainWindow::loadFileFact(const QString &pathfile, const QString &pathfileprevious) {
     //Загрузка факта
     QFile f(pathfile);
@@ -525,7 +530,7 @@ QString MainWindow::findSourceFile(const QString &pathdir)
     foreach(QString subdir, listDirs) {
         QDir source(pathdir + subdir);
         if(selectDate.toString("yyyyMMdd") == source.dirName().left(source.dirName().length() - 6)) {
-            QStringList listFiles = source.entryList(QStringList() << "*PlanFactProductionOPR.xlsx", QDir::Files);
+            QStringList listFiles = source.entryList(QStringList() << namefileplanmask, QDir::Files);
             if(!listFiles.isEmpty()) {
                 foreach(QString file, listFiles) {
                     QString hour = file.mid(8, 2);
