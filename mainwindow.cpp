@@ -20,7 +20,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     //Дата
     ui->dateEdit->setDate(QDateTime::currentDateTime().date());
-    //ui->dateEdit->setDate(QDate(2023, 11, 22));
+    //ui->dateEdit->setDate(QDate(2023, 12, 7));
 
     //Инициализация дисков для поиска маршрута
     const QStringList lstDisk = { "D", "C", "E" };
@@ -1302,22 +1302,24 @@ bool MainWindow::calculation() {
     }
 
 
-
     //Поставки молока
     //Добавить пустую запись
-    QStringList s;
-    for(int i = 0; i < ColumnHeader.length(); i++) {
-        s.append("");
+    QStringList lstr;
+    for(int i = 0; i < rowListMain[0].length(); i++) {
+        lstr.append("");
     }
-    rowListMain.append(s);
+    rowListMain.append(lstr);
+
     QStringList strlist;
     strlist << "MilkReqPlan" << "MilkReqFact"
             <<"SkMilkReqPlan" << "SkMilkReqFact"
             << "CreamReqPlan" << "CreamReqFact";
+
     //Обнулить цифровые значения в строке
-    foreach(QString s, strlist) {
-        rowListMain[rowListMain.length()-1][ColumnHeader.indexOf(s)] = "0";
+    foreach(QString c, strlist) {
+        rowListMain[rowListMain.length()-1][ColumnHeader.indexOf(c)] = "0";
     }
+
     float Qty = 0.0;
     for(int rStock = 1; rStock < rowListStock.length(); rStock++) {
         const QString cat = "plan";
@@ -1336,24 +1338,19 @@ bool MainWindow::calculation() {
         }
     }
     rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("ProductLocationId")] = "milk";
-    rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("StartPlan")] = selectDate.toString("dd.MM.yyyy 00:00:00");
-    rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("EndPlan")] = selectDate.toString("dd.MM.yyyy 00:00:01");
+    //rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("StartPlan")] = selectDate.toString("dd.MM.yyyy 00:00:00");
+    rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("EndPlan")] = selectDate.toString("dd.MM.yyyy 23:59:59");
     rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("OrderPlan")] = "ПРИВОЗ";
     rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("QuantityPlan")] = QString::number(Qty);
     rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("MilkReqPlan")] = QString::number(Qty);
 
     //Поставки обрата
     //Добавить пустую запись
-    for(int i = 0; i < ColumnHeader.length(); i++) {
-        s.append("");
-    }
-    rowListMain.append(s);
-    strlist << "MilkReqPlan" << "MilkReqFact"
-            <<"SkMilkReqPlan" << "SkMilkReqFact"
-            << "CreamReqPlan" << "CreamReqFact";
+    rowListMain.append(lstr);
+
     //Обнулить цифровые значения в строке
-    foreach(QString s, strlist) {
-        rowListMain[rowListMain.length()-1][ColumnHeader.indexOf(s)] = "0";
+    foreach(QString c, strlist) {
+        rowListMain[rowListMain.length()-1][ColumnHeader.indexOf(c)] = "0";
     }
     Qty = 0.0;
     for(int rStock = 1; rStock < rowListStock.length(); rStock++) {
@@ -1373,8 +1370,8 @@ bool MainWindow::calculation() {
         }
     }
     rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("ProductLocationId")] = "skimmed milk";
-    rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("StartPlan")] = selectDate.toString("dd.MM.yyyy 00:00:00");
-    rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("EndPlan")] = selectDate.toString("dd.MM.yyyy 00:00:01");
+    //rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("StartPlan")] = selectDate.toString("dd.MM.yyyy 00:00:00");
+    rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("EndPlan")] = selectDate.toString("dd.MM.yyyy 23:59:59");
     rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("OrderPlan")] = "ПРИВОЗ";
     rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("QuantityPlan")] = QString::number(Qty);
     rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("SkMilkReqPlan")] = QString::number(Qty);
@@ -1382,16 +1379,11 @@ bool MainWindow::calculation() {
 
     //Поставки сливок
     //Добавить пустую запись
-    for(int i = 0; i < ColumnHeader.length(); i++) {
-        s.append("");
-    }
-    rowListMain.append(s);
-    strlist << "MilkReqPlan" << "MilkReqFact"
-            <<"SkMilkReqPlan" << "SkMilkReqFact"
-            << "CreamReqPlan" << "CreamReqFact";
+    rowListMain.append(lstr);
+
     //Обнулить цифровые значения в строке
-    foreach(QString s, strlist) {
-        rowListMain[rowListMain.length()-1][ColumnHeader.indexOf(s)] = "0";
+    foreach(QString c, strlist) {
+        rowListMain[rowListMain.length()-1][ColumnHeader.indexOf(c)] = "0";
     }
     Qty = 0.0;
     for(int rStock = 1; rStock < rowListStock.length(); rStock++) {
@@ -1411,8 +1403,8 @@ bool MainWindow::calculation() {
         }
     }
     rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("ProductLocationId")] = "Сливки";
-    rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("StartPlan")] = selectDate.toString("dd.MM.yyyy 00:00:00");
-    rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("EndPlan")] = selectDate.toString("dd.MM.yyyy 00:00:01");
+    //rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("StartPlan")] = selectDate.toString("dd.MM.yyyy 00:00:00");
+    rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("EndPlan")] = selectDate.toString("dd.MM.yyyy 23:59:59");
     rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("OrderPlan")] = "ПРИВОЗ";
     rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("QuantityPlan")] = QString::number(Qty);
     rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("MilkReqPlan")] = QString::number(Qty);
@@ -1665,11 +1657,11 @@ void MainWindow::addSubTotalRow() {
     for(int rMain = 0; rMain < rowListMain.length()-1; rMain++) {
         if(rowListMain[rMain].at(ColumnHeader.indexOf("ProductLocationId")) != rowListMain[rMain+1].at(ColumnHeader.indexOf("ProductLocationId"))) {
             //Добавить пустую запись
-            QStringList s;
+            QStringList lstr;
             for(int i = 0; i < ColumnHeader.length(); i++) {
-                s.append("");
+                lstr.append("");
             }
-            rowListMain.insert(rMain+1, s);
+            rowListMain.insert(rMain+1, lstr);
 
             QStringList strlist;
             strlist << "MilkReqPlan" << "MilkReqFact" <<"SkMilkReqPlan"
