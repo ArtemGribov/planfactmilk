@@ -53,7 +53,8 @@ QVariant TableModelMain::data(const QModelIndex &index, int role) const
     {
         //Для заказов которые были скорректированы
         if(checkQuestion(rowList[index.row()][Marker]) == "?") {
-            if((index.column() == DeliveryFact) ||
+            if((index.column() == QuantityFact) ||
+            (index.column() == DeliveryFact) ||
             (index.column() == MilkReqFact) ||
             (index.column() == SkMilkReqFact) ||
             (index.column() == CreamReqFact) ||

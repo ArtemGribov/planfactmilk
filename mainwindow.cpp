@@ -966,19 +966,19 @@ bool MainWindow::calculation() {
                                         //PRO Кол-во
                                         float Qty = rowListFact[rFact].at(rowListFact[0].indexOf("GAMNG_KG")).toFloat();
                                         float QtyPrev = rowListFactPrevous[rFactPrev].at(rowListFactPrevous[0].indexOf("GAMNG_KG")).toFloat();
-                                        s << QString::number(Qty - QtyPrev);
+                                        s << QString::number(QtyPrev);
 
                                         //Поставка
                                         Qty = rowListFact[rFact].at(rowListFact[0].indexOf("GWEMG_KG")).toFloat();
                                         QtyPrev = rowListFactPrevous[rFactPrev].at(rowListFactPrevous[0].indexOf("GWEMG_KG")).toFloat();
                                         //Внести маркер
                                         if((Qty - QtyPrev) != 0) {
-                                            s << QString::number(Qty - QtyPrev);
+                                            s << QString::number(Qty);
                                             //Маркер для сигнала, что заказ был изменен
                                             s[ColumnHeader.indexOf("Marker")].append("?");
                                         }
                                         else {
-                                            s << QString::number(Qty - QtyPrev);
+                                            s << "0";
                                             //Маркер для сигнала, что заказ не был изменен
                                             s[ColumnHeader.indexOf("Marker")].append("!");
                                         }
@@ -1220,7 +1220,23 @@ bool MainWindow::calculation() {
                     }
                 }
                 if(rFact == rowListFact.length()-1) {
-                    rowListMain[rMain] << QString::number(SumQtyIn + QtyOut);
+                    //Для заказов без корректировки
+                    if(rowListMain[rMain].at(ColumnHeader.indexOf("Marker")).indexOf("?") == -1) {
+                        rowListMain[rMain] << QString::number(SumQtyIn + QtyOut);
+                    }
+                    //Для скорректированных закрытых заказов
+                    else {
+                        float Qty1 = rowListMain[rMain].at(ColumnHeader.indexOf("QuantityFact")).toFloat();
+                        float Qty2 = rowListMain[rMain].at(ColumnHeader.indexOf("DeliveryFact")).toFloat();
+                        if(Qty1 > Qty2) {
+                            float Proc = 100 - (Qty2 * 100 / Qty1);
+                            rowListMain[rMain] << QString::number((SumQtyIn + QtyOut) * Proc / 100);
+                        }
+                        else {
+                            float Proc = 100 - (Qty1 * 100 / Qty2);
+                            rowListMain[rMain] << QString::number((SumQtyIn + QtyOut) * Proc / 100);
+                        }
+                    }
                 }
             }
         }
@@ -1328,10 +1344,12 @@ bool MainWindow::calculation() {
         if(isComponent(&cat, &type, &mat, &selectPlant)) {
             if(rowListStock[rStock].at(rowListStock[0].indexOf("StockType")) == "movement") {
                 if(rowListStock[rStock].at(rowListStock[0].indexOf("ToWhId")).left(4) == selectPlant) {
-                    QDateTime dt;
-                    dt = QDateTime::fromString(rowListStock[rStock].at(rowListStock[0].indexOf("StartDate")), "yyyy-MM-dd hh:mm:ss");
-                    if(dt < QDateTime(selectDate.addDays(1))) {
-                        Qty += rowListStock[rStock].at(rowListStock[0].indexOf("Quantity")).toFloat();
+                    if(rowListStock[rStock].at(rowListStock[0].indexOf("ToWhId")).indexOf("$DefaultWh") != -1) {
+                        QDateTime dt;
+                        dt = QDateTime::fromString(rowListStock[rStock].at(rowListStock[0].indexOf("StartDate")), "yyyy-MM-dd hh:mm:ss");
+                        if(dt < QDateTime(selectDate.addDays(1))) {
+                            Qty += rowListStock[rStock].at(rowListStock[0].indexOf("Quantity")).toFloat();
+                        }
                     }
                 }
             }
@@ -1360,10 +1378,12 @@ bool MainWindow::calculation() {
         if(isComponent(&cat, &type, &mat, &selectPlant)) {
             if(rowListStock[rStock].at(rowListStock[0].indexOf("StockType")) == "movement") {
                 if(rowListStock[rStock].at(rowListStock[0].indexOf("ToWhId")).left(4) == selectPlant) {
-                    QDateTime dt;
-                    dt = QDateTime::fromString(rowListStock[rStock].at(rowListStock[0].indexOf("StartDate")), "yyyy-MM-dd hh:mm:ss");
-                    if(dt < QDateTime(selectDate.addDays(1))) {
-                        Qty += rowListStock[rStock].at(rowListStock[0].indexOf("Quantity")).toFloat();
+                    if(rowListStock[rStock].at(rowListStock[0].indexOf("ToWhId")).indexOf("$DefaultWh") != -1) {
+                        QDateTime dt;
+                        dt = QDateTime::fromString(rowListStock[rStock].at(rowListStock[0].indexOf("StartDate")), "yyyy-MM-dd hh:mm:ss");
+                        if(dt < QDateTime(selectDate.addDays(1))) {
+                            Qty += rowListStock[rStock].at(rowListStock[0].indexOf("Quantity")).toFloat();
+                        }
                     }
                 }
             }
@@ -1393,10 +1413,12 @@ bool MainWindow::calculation() {
         if(isComponent(&cat, &type, &mat, &selectPlant)) {
             if(rowListStock[rStock].at(rowListStock[0].indexOf("StockType")) == "movement") {
                 if(rowListStock[rStock].at(rowListStock[0].indexOf("ToWhId")).left(4) == selectPlant) {
-                    QDateTime dt;
-                    dt = QDateTime::fromString(rowListStock[rStock].at(rowListStock[0].indexOf("StartDate")), "yyyy-MM-dd hh:mm:ss");
-                    if(dt < QDateTime(selectDate.addDays(1))) {
-                        Qty += rowListStock[rStock].at(rowListStock[0].indexOf("Quantity")).toFloat();
+                    if(rowListStock[rStock].at(rowListStock[0].indexOf("ToWhId")).indexOf("$DefaultWh") != -1) {
+                        QDateTime dt;
+                        dt = QDateTime::fromString(rowListStock[rStock].at(rowListStock[0].indexOf("StartDate")), "yyyy-MM-dd hh:mm:ss");
+                        if(dt < QDateTime(selectDate.addDays(1))) {
+                            Qty += rowListStock[rStock].at(rowListStock[0].indexOf("Quantity")).toFloat();
+                        }
                     }
                 }
             }
