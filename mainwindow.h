@@ -44,6 +44,7 @@ public:
     void addTotalReq();
     void slicetime();
     bool prepeadTables();
+    void addRowEmpty();
 
 private slots:
     void on_dateEdit_userDateChanged(const QDate &date);
@@ -56,6 +57,35 @@ private slots:
 
 private:
     Ui::MainWindow *ui;
+    enum Column {
+        StepId,
+        RunId,
+        MachineId,
+        ProductLocationId,
+        Description,
+        Marker,
+        Version,
+        OperationId,
+        OrderPlan,
+        StartPlan,
+        EndPlan,
+        QuantityPlan,
+        OrderFact,
+        Status,
+        StartFact,
+        EndFact,
+        QuantityFact,
+        DeliveryFact,
+        MilkReqPlan,
+        SkMilkReqPlan,
+        CreamReqPlan,
+        MilkReqFact,
+        SkMilkReqFact,
+        CreamReqFact,
+        MilkDelta,
+        SkMilkDelta,
+        CreamDelta
+    };
     QDate selectDate;
     QString selectPlant;
     float MilkCriteria;
@@ -83,8 +113,6 @@ private:
     QStringList admin;
     QStringList user;
 
-    QStringList ColumnHeader;
-
     QStringList listMilkPlan;
     QStringList listSkMilkPlan;
     QStringList listCreamPlan;
@@ -92,8 +120,6 @@ private:
     QStringList listSkMilkFact;
     QStringList listCreamFact;
 
-public:
-    QList<QStringList> rowListMain;
     QList<QStringList> rowListProduct;
     QList<QStringList> rowListStep;
     QList<QStringList> rowListRun;
@@ -102,5 +128,10 @@ public:
     QList<QStringList> rowListFact;
     QList<QStringList> rowListFactPrevous;
     QList<QStringList> rowListFactSupply;
+    QList<QStringList> rowListMain;
+
+public:
+
+
 };
 #endif // MAINWINDOW_H

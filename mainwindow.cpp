@@ -16,7 +16,7 @@ MainWindow::MainWindow(QWidget *parent)
     ui->setupUi(this);
 
     //Версия
-    version = "2.4.0";
+    version = "2.4.1";
 
     //Дата
     ui->dateEdit->setDate(QDateTime::currentDateTime().date().addDays(-1));
@@ -28,34 +28,6 @@ MainWindow::MainWindow(QWidget *parent)
     //Инициализация строки состояния
     labelstatus = new QLabel(this);
     statusBar()->addWidget(labelstatus);
-
-    ColumnHeader << "StepId"
-                 << "RunId"
-                 << "MachineId"
-                 << "ProductLocationId"
-                 << "Description"
-                 << "Marker"
-                 << "Version"
-                 << "OperationId"
-                 << "OrderPlan"
-                 << "StartPlan"
-                 << "EndPlan"
-                 << "QuantityPlan"
-                 << "OrderFact"
-                 << "Status"
-                 << "StartFact"
-                 << "EndFact"
-                 << "QuantityFact"
-                 << "DeliveryFact"
-                 << "MilkReqPlan"
-                 << "SkMilkReqPlan"
-                 << "CreamReqPlan"
-                 << "MilkReqFact"
-                 << "SkMilkReqFact"
-                 << "CreamReqFact"
-                 << "MilkDelta"
-                 << "SkMilkDelta"
-                 << "CreamDelta";
 }
 
 MainWindow::~MainWindow()
@@ -813,8 +785,6 @@ bool MainWindow::calculation() {
     //Коррекция по сдвигу времени UTC
     int timeCorrection = 60 * 60 * 2;
 
-    QRegExp rxOperation("(/0020)");
-
     //Обработка данных
     for(int rStep = 1; rStep < rowListStep.length(); rStep++) {
         //Фильтр
@@ -824,69 +794,69 @@ bool MainWindow::calculation() {
             if(rxProductLocation.indexIn(rowListStep[rStep].at(rowListStep[0].indexOf("ProductLocationId"))) == -1) {
                 if(rxMachine.indexIn(rowListStep[rStep].at(rowListStep[0].indexOf("MachineId"))) == -1) {
                     //if(rxOperation.indexIn(rowListStep[rStep].at(rowListStep[0].indexOf("OperationId"))) != -1) {
-                        QStringList s;
-                        s << rowListStep[rStep].at(rowListStep[0].indexOf("StepId"))
-                        << rowListStep[rStep].at(rowListStep[0].indexOf("RunId"))
-                        << rowListStep[rStep].at(rowListStep[0].indexOf("MachineId")).mid(rowListStep[rStep].at(rowListStep[0].indexOf("MachineId")).indexOf("/")+1);
-                        s << rowListStep[rStep].at(rowListStep[0].indexOf("ProductLocationId")).left(rowListStep[rStep].at(rowListStep[0].indexOf("ProductLocationId")).indexOf("/"));
+                        addRowEmpty();
+                        rowListMain[rowListMain.length()-1][StepId] = rowListStep[rStep].at(rowListStep[0].indexOf("StepId"));
+                        rowListMain[rowListMain.length()-1][RunId] = rowListStep[rStep].at(rowListStep[0].indexOf("RunId"));
+                        rowListMain[rowListMain.length()-1][MachineId] = rowListStep[rStep].at(rowListStep[0].indexOf("MachineId")).mid(rowListStep[rStep].at(rowListStep[0].indexOf("MachineId")).indexOf("/")+1);
+                        rowListMain[rowListMain.length()-1][ProductLocationId] = rowListStep[rStep].at(rowListStep[0].indexOf("ProductLocationId")).left(rowListStep[rStep].at(rowListStep[0].indexOf("ProductLocationId")).indexOf("/"));
 
                         //Поиск описания материала
                         for(int rProduct = 1; rProduct < rowListProduct.length(); rProduct++) {
                             if(rowListStep[rStep].at(rowListStep[0].indexOf("ProductLocationId")).left(rowListStep[rStep].at(rowListStep[0].indexOf("ProductLocationId")).indexOf("/"))
                             == rowListProduct[rProduct].at(rowListProduct[0].indexOf("ProductId"))) {
-                                s << rowListProduct[rProduct].at(rowListProduct[0].indexOf("DESCRIPTION"));
+                                rowListMain[rowListMain.length()-1][Description] = rowListProduct[rProduct].at(rowListProduct[0].indexOf("DESCRIPTION"));
                                 break;
                             }
                             if(rProduct == rowListProduct.length()-1) {
-                                s << "";
+                                rowListMain[rowListMain.length()-1][Description] = "";
                             }
                         }
 
                         //Маркер
-                        s << "";
+                        rowListMain[rowListMain.length()-1][Marker] = "";
 
                         //Версия
                         if(rowListStep[rStep].at(rowListStep[0].indexOf("OperationId")).left(4) != "PRO/") {
                             if(rowListStep[rStep].at(rowListStep[0].indexOf("OperationId")).indexOf("/") != -1) {
                                 int Pos = rowListStep[rStep].at(rowListStep[0].indexOf("OperationId")).indexOf("/");
-                                s << rowListStep[rStep].at(rowListStep[0].indexOf("OperationId")).left(Pos);
+                                rowListMain[rowListMain.length()-1][Version] = rowListStep[rStep].at(rowListStep[0].indexOf("OperationId")).left(Pos);
                             }
-                            else s << "";
+                            else rowListMain[rowListMain.length()-1][Version] = "";
                         }
-                        else s << "";
+                        else rowListMain[rowListMain.length()-1][Version] = "";
 
                         //Операция
-                        s << rowListStep[rStep].at(rowListStep[0].indexOf("OperationId"));
+                        rowListMain[rowListMain.length()-1][OperationId] = rowListStep[rStep].at(rowListStep[0].indexOf("OperationId"));
 
                         //Поиск номера PLO
                         for(int rRun = 1; rRun < rowListRun.length(); rRun++) {
                             if(rowListStep[rStep].at(rowListStep[0].indexOf("RunId")) == rowListRun[rRun].at(rowListRun[0].indexOf("RunId"))) {
                                 if(rowListRun[rRun].at(rowListRun[0].indexOf("ERPOrderId")).left(4) == "PLO/" || rowListRun[rRun].at(rowListRun[0].indexOf("ERPOrderId")).left(4) == "PRO/") {
-                                    s << rowListRun[rRun].at(rowListRun[0].indexOf("ERPOrderId")).left(4) +
+                                    rowListMain[rowListMain.length()-1][OrderPlan] = rowListRun[rRun].at(rowListRun[0].indexOf("ERPOrderId")).left(4) +
                                     rowListRun[rRun].at(rowListRun[0].indexOf("ERPOrderId")).mid(rowListRun[rRun].at(rowListRun[0].indexOf("ERPOrderId")).indexOf("RFCOMP")+7);
                                     break;
                                 }
                                 else {
-                                    s << rowListRun[rRun].at(rowListRun[0].indexOf("ERPOrderId"));
+                                    rowListMain[rowListMain.length()-1][OrderPlan] = rowListRun[rRun].at(rowListRun[0].indexOf("ERPOrderId"));
                                     break;
                                 }
                             }
                             if(rRun == rowListRun.length()-1) {
-                                s << "";
+                                rowListMain[rowListMain.length()-1][OrderPlan] = "";
                             }
                         }
 
                         QDateTime dt;
                         dt = QDateTime::fromString(rowListStep[rStep].at(rowListStep[0].indexOf("StartDate")), "yyyy-MM-dd hh:mm:ss");
-                        s << dt.toString("dd.MM.yyyy hh:mm:ss");
+                        rowListMain[rowListMain.length()-1][StartPlan] = dt.toString("dd.MM.yyyy hh:mm:ss");
 
                         dt = QDateTime::fromString(rowListStep[rStep].at(rowListStep[0].indexOf("EndDate")), "yyyy-MM-dd hh:mm:ss");
-                        s << dt.toString("dd.MM.yyyy hh:mm:ss");
+                        rowListMain[rowListMain.length()-1][EndPlan] = dt.toString("dd.MM.yyyy hh:mm:ss");
 
                         float PlanQty = rowListStep[rStep].at(rowListStep[0].indexOf("PlannedQuantity")).toFloat();
                         QString str;
-                        s << str.number(PlanQty);
-                        rowListMain.append(s);
+                        rowListMain[rowListMain.length()-1][QuantityPlan] = str.number(PlanQty);
+                        //rowListMain.append(s);
                     //}
                 }
             }
@@ -896,14 +866,14 @@ bool MainWindow::calculation() {
 
     //Поиск номера PRO
     for(int rMain = 0; rMain < rowListMain.length(); rMain++) {
-        if(rowListMain[rMain].at(ColumnHeader.indexOf("OrderPlan")).left(4) == "PLO/" || rowListMain[rMain].at(ColumnHeader.indexOf("OrderPlan")).left(4) == "PRO/") {
+        if(rowListMain[rMain].at(OrderPlan).left(4) == "PLO/" || rowListMain[rMain].at(OrderPlan).left(4) == "PRO/") {
             bool ok;
-            int Pos = rowListMain[rMain].at(ColumnHeader.indexOf("OrderPlan")).indexOf("/")+1;
-            long long ORDER1 = rowListMain[rMain].at(ColumnHeader.indexOf("OrderPlan")).mid(Pos).toLongLong(&ok, 10);
+            int Pos = rowListMain[rMain].at(OrderPlan).indexOf("/")+1;
+            long long ORDER1 = rowListMain[rMain].at(OrderPlan).mid(Pos).toLongLong(&ok, 10);
             if(ok) {
                 long long ORDER2;
                 for(int rFact = 1; rFact < rowListFact.length(); rFact++) {
-                    if(rowListMain[rMain].at(ColumnHeader.indexOf("OrderPlan")).left(4) == "PLO/") {
+                    if(rowListMain[rMain].at(OrderPlan).left(4) == "PLO/") {
                         ORDER2 = rowListFact[rFact].at(rowListFact[0].indexOf("PLNUM")).toLongLong(&ok, 10);
                     }
                     else {
@@ -914,49 +884,33 @@ bool MainWindow::calculation() {
                             long long PRO;
                             //Технологический номер
                             PRO = rowListFact[rFact].at(rowListFact[0].indexOf("AUFNR")).toLongLong();
-                            rowListMain[rMain] << QString::number(PRO);
+                            rowListMain[rMain][OrderFact] = QString::number(PRO);
 
                             //Статус
-                            rowListMain[rMain] << rowListFact[rFact].at(rowListFact[0].indexOf("ASTTX")).left(4);
+                            rowListMain[rMain][Status] = rowListFact[rFact].at(rowListFact[0].indexOf("ASTTX")).left(4);
                             //Дата Время начала
                             QDateTime dt;
                             dt = QDateTime::fromString(rowListFact[rFact].at(rowListFact[0].indexOf("GSTRP")) + " " + rowListFact[rFact].at(rowListFact[0].indexOf("GSUZP")), "dd.MM.yyyy hh:mm:ss");
                             if(!dt.isValid()) dt = QDateTime::fromString(rowListFact[rFact].at(rowListFact[0].indexOf("GSTRP")) + " 00:00:00", "dd.MM.yyyy hh:mm:ss");
-                                rowListMain[rMain] << dt.toString("dd.MM.yyyy hh:mm:ss");
+                                rowListMain[rMain][StartFact] = dt.toString("dd.MM.yyyy hh:mm:ss");
                             //Дата Время окончания
                             dt = QDateTime::fromString(rowListFact[rFact].at(rowListFact[0].indexOf("GLTRP")) + " " + rowListFact[rFact].at(rowListFact[0].indexOf("GLUZP")), "dd.MM.yyyy hh:mm:ss");
                             if(!dt.isValid()) dt = QDateTime::fromString(rowListFact[rFact].at(rowListFact[0].indexOf("GLTRP")) + " 00:00:00", "dd.MM.yyyy hh:mm:ss");
-                                rowListMain[rMain] << dt.toString("dd.MM.yyyy hh:mm:ss");
+                                rowListMain[rMain][EndFact] = dt.toString("dd.MM.yyyy hh:mm:ss");
                             //Кол-во PRO
                             float Qty;
                             Qty = rowListFact[rFact].at(rowListFact[0].indexOf("GAMNG_KG")).toFloat(&ok);
                             if(ok)
-                                rowListMain[rMain] << QString::number(Qty);
+                                rowListMain[rMain][QuantityFact] = QString::number(Qty);
                             //Выпуск
                             Qty = rowListFact[rFact].at(rowListFact[0].indexOf("GWEMG_KG")).toFloat(&ok);
                             if(ok)
-                                rowListMain[rMain] << QString::number(Qty);
+                                rowListMain[rMain][DeliveryFact] = QString::number(Qty);
                             break;
                         }
                     }
-                    if(rFact == rowListFact.length()-1) {
-                        rowListMain[rMain] << "";
-                        rowListMain[rMain] << "";
-                        rowListMain[rMain] << "";
-                        rowListMain[rMain] << "";
-                        rowListMain[rMain] << "";
-                        rowListMain[rMain] << "";
-                    }
                 }
             }
-        }
-        else {
-            rowListMain[rMain] << "";
-            rowListMain[rMain] << "";
-            rowListMain[rMain] << "";
-            rowListMain[rMain] << "";
-            rowListMain[rMain] << "";
-            rowListMain[rMain] << "";
         }
     }
 
@@ -975,100 +929,97 @@ bool MainWindow::calculation() {
                     //Заказы которые созданы в день оценки
                     if(createdate.addSecs(timeCorrection) >= QDateTime(selectDate)) {
                          ORDER = rowListFact[rFact].at(rowListFact[0].indexOf("AUFNR"));
-                         QStringList s;
+                         addRowEmpty();
                          //StepId
-                         s << "SAP";
+                         rowListMain[rowListMain.length()-1][StepId] = "SAP";
                          //RunId
-                         s << "Вручную SAP";
+                         rowListMain[rowListMain.length()-1][RunId] = "Вручную SAP";
                          //Машина
-                         s << rowListFact[rFact].at(rowListFact[0].indexOf("MDV01"));
+                         rowListMain[rowListMain.length()-1][MachineId] = rowListFact[rFact].at(rowListFact[0].indexOf("MDV01"));
                          //Материал
-                         s << rowListFact[rFact].at(rowListFact[0].indexOf("PLNBEZ")).right(9);
+                         rowListMain[rowListMain.length()-1][ProductLocationId] = rowListFact[rFact].at(rowListFact[0].indexOf("PLNBEZ")).right(9);
                          //Описание материала
-                         s << rowListFact[rFact].at(rowListFact[0].indexOf("MATXT"));
+                         rowListMain[rowListMain.length()-1][Description] = rowListFact[rFact].at(rowListFact[0].indexOf("MATXT"));
                          //Маркер
-                         s << "";
+                         rowListMain[rowListMain.length()-1][Marker] = "";
                          //Версия
-                         s << rowListFact[rFact].at(rowListFact[0].indexOf("VERID"));
+                         rowListMain[rowListMain.length()-1][Version] = rowListFact[rFact].at(rowListFact[0].indexOf("VERID"));
                          //Операция
-                         s << "";
+                         rowListMain[rowListMain.length()-1][OperationId] = "";
                          //PLO номер
-                         s << "";
+                         rowListMain[rowListMain.length()-1][OrderPlan] = "";
                          //PLO Начало
-                         s << "";
+                         rowListMain[rowListMain.length()-1][StartPlan] = "";
                          //PLO Конец
-                         s << "";
+                         rowListMain[rowListMain.length()-1][EndPlan] = "";
                          //PLO Кол-во
-                         s << "";
+                         rowListMain[rowListMain.length()-1][QuantityPlan] = "";
                          //PRO номер
-                         s << QString::number(ORDER.toLongLong());
+                         rowListMain[rowListMain.length()-1][OrderFact] = QString::number(ORDER.toLongLong());
                          // Статус
-                         s << rowListFact[rFact].at(rowListFact[0].indexOf("ASTTX")).left(4);
+                         rowListMain[rowListMain.length()-1][Status] = rowListFact[rFact].at(rowListFact[0].indexOf("ASTTX")).left(4);
                          //Дата Время начала
                          QDateTime dt;
                          dt = QDateTime::fromString(rowListFact[rFact].at(rowListFact[0].indexOf("GSTRP")) + " " + rowListFact[rFact].at(rowListFact[0].indexOf("GSUZP")), "dd.MM.yyyy hh:mm:ss");
                          if(!dt.isValid()) dt = QDateTime::fromString(rowListFact[rFact].at(rowListFact[0].indexOf("GSTRP")) + " 00:00:00", "dd.MM.yyyy hh:mm:ss");
-                             s << dt.toString("dd.MM.yyyy hh:mm:ss");
+                             rowListMain[rowListMain.length()-1][StartFact] = dt.toString("dd.MM.yyyy hh:mm:ss");
                          //Дата Время окончания
                          dt = QDateTime::fromString(rowListFact[rFact].at(rowListFact[0].indexOf("GLTRP")) + " " + rowListFact[rFact].at(rowListFact[0].indexOf("GLUZP")), "dd.MM.yyyy hh:mm:ss");
                          if(!dt.isValid()) dt = QDateTime::fromString(rowListFact[rFact].at(rowListFact[0].indexOf("GLTRP")) + " 00:00:00", "dd.MM.yyyy hh:mm:ss");
-                             s << dt.toString("dd.MM.yyyy hh:mm:ss");
+                             rowListMain[rowListMain.length()-1][EndFact] = dt.toString("dd.MM.yyyy hh:mm:ss");
 
                          //PRO Кол-во
                          float Qty;
                          Qty = rowListFact[rFact].at(rowListFact[0].indexOf("GAMNG_KG")).toFloat();
-                         s << QString::number(Qty);
+                         rowListMain[rowListMain.length()-1][QuantityFact] = QString::number(Qty);
 
                          //Выпуск
                          Qty = rowListFact[rFact].at(rowListFact[0].indexOf("GWEMG_KG")).toFloat();
-                         s << QString::number(Qty);
-
-                         rowListMain.append(s);
+                         rowListMain[rowListMain.length()-1][DeliveryFact] = QString::number(Qty);
                      }
                     //Заказы которые созданы в прошлом, но скорректированы в день оценки
                     else if(createdate.addSecs(timeCorrection) <= QDateTime(selectDate) && changedate.addSecs(timeCorrection) >= QDateTime(selectDate)) {
-                        QStringList s;
                         ORDER = rowListFact[rFact].at(rowListFact[0].indexOf("AUFNR"));
                         //StepId
-                        s << "SAP";
+                        rowListMain[rowListMain.length()-1][StepId] = "SAP";
                         //RunId
-                        s << "Вручную SAP";
+                        rowListMain[rowListMain.length()-1][RunId] = "Вручную SAP";
                         //Машина
-                        s << rowListFact[rFact].at(rowListFact[0].indexOf("MDV01"));
+                        rowListMain[rowListMain.length()-1][MachineId] = rowListFact[rFact].at(rowListFact[0].indexOf("MDV01"));
                         //Материал
-                        s << rowListFact[rFact].at(rowListFact[0].indexOf("PLNBEZ")).right(9);
+                        rowListMain[rowListMain.length()-1][ProductLocationId] = rowListFact[rFact].at(rowListFact[0].indexOf("PLNBEZ")).right(9);
                         //Описание материала
-                        s << rowListFact[rFact].at(rowListFact[0].indexOf("MATXT"));
+                        rowListMain[rowListMain.length()-1][Description] = rowListFact[rFact].at(rowListFact[0].indexOf("MATXT"));
 
                         //Маркер
-                        s << "";
+                        rowListMain[rowListMain.length()-1][Marker] = "";
 
                         //ВИ
-                        s << rowListFact[rFact].at(rowListFact[0].indexOf("VERID"));
+                        rowListMain[rowListMain.length()-1][Version] = rowListFact[rFact].at(rowListFact[0].indexOf("VERID"));
                         //Операция
-                        s << "";
+                        rowListMain[rowListMain.length()-1][OperationId] = "";
 
                         //PLO номер
-                        s << "";
+                        rowListMain[rowListMain.length()-1][OrderPlan] = "";
                         //PLO Начало
-                        s << "";
+                        rowListMain[rowListMain.length()-1][StartPlan] = "";
                         //PLO Конец
-                        s << "";
+                        rowListMain[rowListMain.length()-1][EndPlan] = "";
                         //PLO Кол-во
-                        s << "";
+                        rowListMain[rowListMain.length()-1][QuantityPlan] = "";
                         //PRO номер
-                        s << QString::number(ORDER.toLongLong());
+                        rowListMain[rowListMain.length()-1][OrderFact] = QString::number(ORDER.toLongLong());
                         //Статус
-                        s << rowListFact[rFact].at(rowListFact[0].indexOf("ASTTX")).left(4);
+                        rowListMain[rowListMain.length()-1][Status] = rowListFact[rFact].at(rowListFact[0].indexOf("ASTTX")).left(4);
                         //Дата Время начала
                         QDateTime dt;
                         dt = QDateTime::fromString(rowListFact[rFact].at(rowListFact[0].indexOf("GSTRP")) + " " + rowListFact[rFact].at(rowListFact[0].indexOf("GSUZP")), "dd.MM.yyyy hh:mm:ss");
                         if(!dt.isValid()) dt = QDateTime::fromString(rowListFact[rFact].at(rowListFact[0].indexOf("GSTRP")) + " 00:00:00", "dd.MM.yyyy hh:mm:ss");
-                            s << dt.toString("dd.MM.yyyy hh:mm:ss");
+                            rowListMain[rowListMain.length()-1][StartFact] = dt.toString("dd.MM.yyyy hh:mm:ss");
                         //Дата Время окончания
                         dt = QDateTime::fromString(rowListFact[rFact].at(rowListFact[0].indexOf("GLTRP")) + " " + rowListFact[rFact].at(rowListFact[0].indexOf("GLUZP")), "dd.MM.yyyy hh:mm:ss");
                         if(!dt.isValid()) dt = QDateTime::fromString(rowListFact[rFact].at(rowListFact[0].indexOf("GLTRP")) + " 00:00:00", "dd.MM.yyyy hh:mm:ss");
-                            s << dt.toString("dd.MM.yyyy hh:mm:ss");
+                            rowListMain[rowListMain.length()-1][EndFact] = dt.toString("dd.MM.yyyy hh:mm:ss");
 
                         //Проверить что изменилось в заказе относительно предыдущего снэпшота
                         if(!rowListFactPrevous.isEmpty()) {
@@ -1083,21 +1034,21 @@ bool MainWindow::calculation() {
                                             //PRO Кол-во
                                             float Qty = rowListFact[rFact].at(rowListFact[0].indexOf("GAMNG_KG")).toFloat();
                                             float QtyPrev = rowListFactPrevous[rFactPrev].at(rowListFactPrevous[0].indexOf("GAMNG_KG")).toFloat();
-                                            s << QString::number(QtyPrev);
+                                            rowListMain[rowListMain.length()-1][OrderFact] = QString::number(QtyPrev);
 
                                             //Поставка
                                             Qty = rowListFact[rFact].at(rowListFact[0].indexOf("GWEMG_KG")).toFloat();
                                             QtyPrev = rowListFactPrevous[rFactPrev].at(rowListFactPrevous[0].indexOf("GWEMG_KG")).toFloat();
                                             //Внести маркер
                                             if((Qty - QtyPrev) != 0) {
-                                                s << QString::number(Qty);
+                                                rowListMain[rowListMain.length()-1][DeliveryFact] = QString::number(Qty);
                                                 //Маркер для сигнала, что заказ был изменен
-                                                s[ColumnHeader.indexOf("Marker")].append("?");
+                                                rowListMain[rowListMain.length()-1][Marker].append("?");
                                             }
                                             else {
-                                                s << "0";
+                                                rowListMain[rowListMain.length()-1][DeliveryFact] = "0";
                                                 //Маркер для сигнала, что заказ не был изменен
-                                                s[ColumnHeader.indexOf("Marker")].append("!");
+                                                rowListMain[rowListMain.length()-1][Marker].append("!");
                                             }
                                             break;
                                         }
@@ -1114,25 +1065,18 @@ bool MainWindow::calculation() {
                                             float Qty = rowListFact[rFact].at(rowListFact[0].indexOf("GAMNG_KG")).toFloat();
                                             float QtyPrev = rowListFactPrevous[rFactPrev].at(rowListFactPrevous[0].indexOf("GAMNG_KG")).toFloat();
                                             //PRO Кол-во
-                                            s << QString::number(Qty - QtyPrev);
+                                            rowListMain[rowListMain.length()-1][QuantityFact] = QString::number(Qty - QtyPrev);
 
                                             //Поставка
                                             Qty = rowListFact[rFact].at(rowListFact[0].indexOf("GWEMG_KG")).toFloat();
                                             QtyPrev = rowListFactPrevous[rFactPrev].at(rowListFactPrevous[0].indexOf("GWEMG_KG")).toFloat();
-                                            s << QString::number(Qty - QtyPrev);
+                                            rowListMain[rowListMain.length()-1][DeliveryFact] =  QString::number(Qty - QtyPrev);
                                             break;
                                         }
                                     }
                                 }
                             }
                         }
-                        else {
-                            //PRO Кол-во
-                            s << "0";
-                            //Поставка
-                            s << "0";
-                        }
-                        rowListMain.append(s);
                     }
                  }
              }
@@ -1141,74 +1085,66 @@ bool MainWindow::calculation() {
                  if(ORDER.isEmpty() || ORDER != QString::number(rowListFact[rFact].at(rowListFact[0].indexOf("AUFNR")).toLongLong())) {
                     ORDER = QString::number(rowListFact[rFact].at(rowListFact[0].indexOf("AUFNR")).toLongLong());
                     QString PLOORDER = QString::number(rowListFact[rFact].at(rowListFact[0].indexOf("PLNUM")).toLongLong());
-                    if(rowListFact[rFact].at(rowListFact[0].indexOf("AUFNR")) == "010011515970")
-                        qDebug() << "";
                     QDateTime createdate;
                     QDateTime changedate;
                     createdate = QDateTime::fromString(rowListFact[rFact].at(rowListFact[0].indexOf("ERDAT")) + " " + rowListFact[rFact].at(rowListFact[0].indexOf("ERFZEIT")), "dd.MM.yyyy hh:mm:ss");
                     changedate = QDateTime::fromString(rowListFact[rFact].at(rowListFact[0].indexOf("AEDAT")) + " " + rowListFact[rFact].at(rowListFact[0].indexOf("AEZEIT")), "dd.MM.yyyy hh:mm:ss");
                     for(int rMain = 0; rMain < rowListMain.length(); rMain++) {
-                        if(rMain == rowListMain.length()-1)
-                            qDebug() << "";
-                        int Pos = rowListMain[rMain].at(ColumnHeader.indexOf("OrderPlan")).indexOf("/");
+                        int Pos = rowListMain[rMain].at(OrderPlan).indexOf("/");
                         if(Pos != -1) {
-                            if(PLOORDER == rowListMain[rMain].at(ColumnHeader.indexOf("OrderPlan")).mid(Pos+1)) {
+                            if(PLOORDER == rowListMain[rMain].at(OrderPlan).mid(Pos+1)) {
                                 break;
                             }
                         }
                         else if(rMain == rowListMain.length()-1) {
                             //Заказы которые созданы в день оценки
                             if(createdate.addSecs(timeCorrection) >= QDateTime(selectDate)) {
-                                 //qDebug() << "3" << PLOORDER << ORDER;
-                                 QStringList s;
                                  //StepId
-                                 s << "";
+                                 rowListMain[rowListMain.length()-1][StepId] = "";
                                  //RunId
-                                 s << "";
+                                 rowListMain[rowListMain.length()-1][RunId] = "";
                                  //Машина
-                                 s << rowListFact[rFact].at(rowListFact[0].indexOf("MDV01"));
+                                 rowListMain[rowListMain.length()-1][MachineId] = rowListFact[rFact].at(rowListFact[0].indexOf("MDV01"));
                                  //Материал
-                                 s << rowListFact[rFact].at(rowListFact[0].indexOf("PLNBEZ")).right(9);
+                                 rowListMain[rowListMain.length()-1][ProductLocationId] = rowListFact[rFact].at(rowListFact[0].indexOf("PLNBEZ")).right(9);
                                  //Описание материала
-                                 s << rowListFact[rFact].at(rowListFact[0].indexOf("MATXT"));
+                                 rowListMain[rowListMain.length()-1][Description] = rowListFact[rFact].at(rowListFact[0].indexOf("MATXT"));
                                  //Маркер
-                                 s << "";
+                                 rowListMain[rowListMain.length()-1][Marker] = "";
                                  //Версия
-                                 s << rowListFact[rFact].at(rowListFact[0].indexOf("VERID"));
+                                 rowListMain[rowListMain.length()-1][Version] = rowListFact[rFact].at(rowListFact[0].indexOf("VERID"));
                                  //Операция
-                                 s << "";
+                                 rowListMain[rowListMain.length()-1][OperationId] = "";
                                  //PLO номер
-                                 s << "DEL: " + PLOORDER;
+                                 rowListMain[rowListMain.length()-1][OrderPlan] = "DEL: " + PLOORDER;
                                  //PLO Начало
-                                 s << "";
+                                 rowListMain[rowListMain.length()-1][StartPlan] = "";
                                  //PLO Конец
-                                 s << "";
+                                 rowListMain[rowListMain.length()-1][EndPlan] = "";
                                  //PLO Кол-во
-                                 s << "";
+                                 rowListMain[rowListMain.length()-1][QuantityPlan] = "";
                                  //PRO номер
-                                 s << QString::number(ORDER.toLongLong());
+                                 rowListMain[rowListMain.length()-1][OrderFact] = QString::number(ORDER.toLongLong());
                                  // Статус
-                                 s << rowListFact[rFact].at(rowListFact[0].indexOf("ASTTX")).left(4);
+                                 rowListMain[rowListMain.length()-1][Status] = rowListFact[rFact].at(rowListFact[0].indexOf("ASTTX")).left(4);
                                  //Дата Время начала
                                  QDateTime dt;
                                  dt = QDateTime::fromString(rowListFact[rFact].at(rowListFact[0].indexOf("GSTRP")) + " " + rowListFact[rFact].at(rowListFact[0].indexOf("GSUZP")), "dd.MM.yyyy hh:mm:ss");
                                  if(!dt.isValid()) dt = QDateTime::fromString(rowListFact[rFact].at(rowListFact[0].indexOf("GSTRP")) + " 00:00:00", "dd.MM.yyyy hh:mm:ss");
-                                     s << dt.toString("dd.MM.yyyy hh:mm:ss");
+                                     rowListMain[rowListMain.length()-1][StartFact] = dt.toString("dd.MM.yyyy hh:mm:ss");
                                  //Дата Время окончания
                                  dt = QDateTime::fromString(rowListFact[rFact].at(rowListFact[0].indexOf("GLTRP")) + " " + rowListFact[rFact].at(rowListFact[0].indexOf("GLUZP")), "dd.MM.yyyy hh:mm:ss");
                                  if(!dt.isValid()) dt = QDateTime::fromString(rowListFact[rFact].at(rowListFact[0].indexOf("GLTRP")) + " 00:00:00", "dd.MM.yyyy hh:mm:ss");
-                                     s << dt.toString("dd.MM.yyyy hh:mm:ss");
+                                     rowListMain[rowListMain.length()-1][EndFact] = dt.toString("dd.MM.yyyy hh:mm:ss");
 
                                  //PRO Кол-во
                                  float Qty;
                                  Qty = rowListFact[rFact].at(rowListFact[0].indexOf("GAMNG_KG")).toFloat();
-                                 s << QString::number(Qty);
+                                 rowListMain[rowListMain.length()-1][QuantityFact] = QString::number(Qty);
 
                                  //Выпуск
                                  Qty = rowListFact[rFact].at(rowListFact[0].indexOf("GWEMG_KG")).toFloat();
-                                 s << QString::number(Qty);
-
-                                 rowListMain.append(s);
+                                 rowListMain[rowListMain.length()-1][DeliveryFact] = QString::number(Qty);
                                  break;
                              }
                          }
@@ -1227,7 +1163,7 @@ bool MainWindow::calculation() {
         for(int rFlow = 1; rFlow < rowListProductFlow.length(); rFlow++) {
             int Pos = rowListProductFlow[rFlow].at(rowListProductFlow[0].indexOf("WhId")).indexOf("/");
             if(rowListProductFlow[rFlow].at(rowListProductFlow[0].indexOf("WhId")).mid(Pos+1) != "$Outside") {
-                if(rowListMain[rMain].at(ColumnHeader.indexOf("StepId")) == rowListProductFlow[rFlow].at(rowListProductFlow[0].indexOf("StepId"))) {
+                if(rowListMain[rMain][StepId] == rowListProductFlow[rFlow].at(rowListProductFlow[0].indexOf("StepId"))) {
                     const QString material = rowListProductFlow[rFlow].at(rowListProductFlow[0].indexOf("ProductId"));
                     const QString plant = rowListProductFlow[rFlow].at(rowListProductFlow[0].indexOf("LocationId"));
                     if(isComponent(&cat, &type, &material, &plant)) {
@@ -1236,7 +1172,7 @@ bool MainWindow::calculation() {
                 }
             }
             if(rFlow == rowListProductFlow.length()-1) {
-                rowListMain[rMain] << QString::number(SumQty);
+                rowListMain[rMain][MilkReqPlan] = QString::number(SumQty);
             }
         }
     }
@@ -1250,7 +1186,7 @@ bool MainWindow::calculation() {
         for(int rFlow = 1; rFlow < rowListProductFlow.length(); rFlow++) {
             int Pos = rowListProductFlow[rFlow].at(rowListProductFlow[0].indexOf("WhId")).indexOf("/");
             if(rowListProductFlow[rFlow].at(rowListProductFlow[0].indexOf("WhId")).mid(Pos+1) != "$Outside") {
-                if(rowListMain[rMain].at(ColumnHeader.indexOf("StepId")) == rowListProductFlow[rFlow].at(rowListProductFlow[0].indexOf("StepId"))) {
+                if(rowListMain[rMain][StepId] == rowListProductFlow[rFlow].at(rowListProductFlow[0].indexOf("StepId"))) {
                     const QString material = rowListProductFlow[rFlow].at(rowListProductFlow[0].indexOf("ProductId"));
                     const QString plant = rowListProductFlow[rFlow].at(rowListProductFlow[0].indexOf("LocationId"));
                     if(isComponent(&cat, &type, &material, &plant)) {
@@ -1259,7 +1195,7 @@ bool MainWindow::calculation() {
                 }
             }
             if(rFlow == rowListProductFlow.length()-1) {
-                rowListMain[rMain] << QString::number(SumQty);
+                rowListMain[rMain][SkMilkReqPlan] = QString::number(SumQty);
             }
         }
     }
@@ -1273,7 +1209,7 @@ bool MainWindow::calculation() {
         for(int rFlow = 1; rFlow < rowListProductFlow.length(); rFlow++) {
             int Pos = rowListProductFlow[rFlow].at(rowListProductFlow[0].indexOf("WhId")).indexOf("/");
             if(rowListProductFlow[rFlow].at(rowListProductFlow[0].indexOf("WhId")).mid(Pos+1) != "$Outside") {
-                if(rowListMain[rMain].at(ColumnHeader.indexOf("StepId")) == rowListProductFlow[rFlow].at(rowListProductFlow[0].indexOf("StepId"))) {
+                if(rowListMain[rMain][StepId] == rowListProductFlow[rFlow].at(rowListProductFlow[0].indexOf("StepId"))) {
                     const QString material = rowListProductFlow[rFlow].at(rowListProductFlow[0].indexOf("ProductId"));
                     const QString plant = rowListProductFlow[rFlow].at(rowListProductFlow[0].indexOf("LocationId"));
                     if(isComponent(&cat, &type, &material, &plant)) {
@@ -1283,7 +1219,7 @@ bool MainWindow::calculation() {
                 }
             }
             if(rFlow == rowListProductFlow.length()-1) {
-                rowListMain[rMain] << QString::number(SumQty);
+                rowListMain[rMain][CreamReqPlan] = QString::number(SumQty);
             }
         }
     }
@@ -1291,19 +1227,20 @@ bool MainWindow::calculation() {
 
     //Факт молока
     for(int rMain = 0; rMain < rowListMain.length(); rMain++) {
-        if(rowListMain[rMain].at(ColumnHeader.indexOf("Marker")).indexOf("!") == -1) {
+        if(rowListMain[rMain][Marker].indexOf("!") == -1) {
             float SumQtyIn = 0.0;
             float QtyOut = 0.0;
             for(int rFact = 1; rFact < rowListFact.length(); rFact++) {
                 bool ok;
                 long long ORDER1;
                 long long ORDER2;
-                ORDER1 = rowListMain[rMain].at(ColumnHeader.indexOf("OrderFact")).toLongLong(&ok, 10);
+                ORDER1 = rowListMain[rMain][OrderFact].toLongLong(&ok, 10);
                 if(ok) {
                     ORDER2 = rowListFact[rFact].at(rowListFact[0].indexOf("AUFNR")).toLongLong(&ok, 10);
                     if(ok) {
                         if(ORDER1 == ORDER2) {
-                            if(rowListMain[rMain].at(ColumnHeader.indexOf("OperationId")).isEmpty() || rxOperation.indexIn(rowListMain[rMain].at(ColumnHeader.indexOf("OperationId"))) != -1) {
+                            QRegExp rxOperation("(/0020)");
+                            if(rowListMain[rMain][OperationId].isEmpty() || rxOperation.indexIn(rowListMain[rMain][OperationId]) != -1) {
                                 //Факт расхода молока
                                 const QString cat = "fact";
                                 const QString type = "milk";
@@ -1318,16 +1255,16 @@ bool MainWindow::calculation() {
                                         float QtyPlan;
                                         float QtyFact;
                                         float QtyDelivFact;
-                                        QtyPlan = rowListMain[rMain].at(ColumnHeader.indexOf("QuantityPlan")).toFloat();
-                                        QtyFact = rowListMain[rMain].at(ColumnHeader.indexOf("QuantityFact")).toFloat();
-                                        QtyDelivFact = rowListMain[rMain].at(ColumnHeader.indexOf("DeliveryFact")).toFloat();
+                                        QtyPlan = rowListMain[rMain][QuantityPlan].toFloat();
+                                        QtyFact = rowListMain[rMain][QuantityFact].toFloat();
+                                        QtyDelivFact = rowListMain[rMain][DeliveryFact].toFloat();
                                         float Proc;
                                         if(QtyPlan) {
                                             if(QtyFact > QtyDelivFact)
                                                 Proc = QtyFact * 100 / QtyPlan;
                                             else
                                                 Proc = QtyDelivFact * 100 / QtyPlan;
-                                            SumQtyIn = rowListMain[rMain].at(ColumnHeader.indexOf("MilkReqPlan")).toFloat() * Proc / 100;
+                                            SumQtyIn = rowListMain[rMain][MilkReqPlan].toFloat() * Proc / 100;
                                         }
                                         else  {
                                             SumQtyIn = 0.01;
@@ -1353,46 +1290,44 @@ bool MainWindow::calculation() {
                 }
                 if(rFact == rowListFact.length()-1) {
                     //Для заказов без корректировки
-                    if(rowListMain[rMain].at(ColumnHeader.indexOf("Marker")).indexOf("?") == -1) {
-                        rowListMain[rMain] << QString::number(SumQtyIn + QtyOut);
+                    if(rowListMain[rMain][Marker].indexOf("?") == -1) {
+                        rowListMain[rMain][MilkReqFact] = QString::number(SumQtyIn + QtyOut);
                     }
                     //Для скорректированных закрытых заказов
                     else {
-                        float Qty1 = rowListMain[rMain].at(ColumnHeader.indexOf("QuantityFact")).toFloat();
-                        float Qty2 = rowListMain[rMain].at(ColumnHeader.indexOf("DeliveryFact")).toFloat();
+                        float Qty1 = rowListMain[rMain][QuantityFact].toFloat();
+                        float Qty2 = rowListMain[rMain][DeliveryFact].toFloat();
                         if(Qty1 > Qty2) {
                             float Proc = 100 - (Qty2 * 100 / Qty1);
-                            rowListMain[rMain] << QString::number(-1*(SumQtyIn + QtyOut) * Proc / 100);
+                            rowListMain[rMain][MilkReqFact] = QString::number(-1*(SumQtyIn + QtyOut) * Proc / 100);
                         }
                         else {
                             float Proc = 100 - (Qty1 * 100 / Qty2);
-                            rowListMain[rMain] << QString::number(-1*(SumQtyIn + QtyOut) * Proc / 100);
+                            rowListMain[rMain][MilkReqFact] = QString::number(-1*(SumQtyIn + QtyOut) * Proc / 100);
                         }
                     }
                 }
             }
-        }
-        else {
-            rowListMain[rMain] << "0";
         }
     }
 
 
     //Факт обрата
     for(int rMain = 0; rMain < rowListMain.length(); rMain++) {
-        if(rowListMain[rMain].at(ColumnHeader.indexOf("Marker")).indexOf("!") == -1) {
+        if(rowListMain[rMain][Marker].indexOf("!") == -1) {
             float SumQtyIn = 0.0;
             float QtyOut = 0.0;
             for(int rFact = 1; rFact < rowListFact.length(); rFact++) {
                 bool ok;
                 long long ORDER1;
                 long long ORDER2;
-                ORDER1 = rowListMain[rMain].at(ColumnHeader.indexOf("OrderFact")).toLongLong(&ok, 10);
+                ORDER1 = rowListMain[rMain][OrderFact].toLongLong(&ok, 10);
                 if(ok) {
                     ORDER2 = rowListFact[rFact].at(rowListFact[0].indexOf("AUFNR")).toLongLong(&ok, 10);
                     if(ok) {
                         if(ORDER1 == ORDER2) {
-                            if(rowListMain[rMain].at(ColumnHeader.indexOf("OperationId")).isEmpty() || rxOperation.indexIn(rowListMain[rMain].at(ColumnHeader.indexOf("OperationId"))) != -1) {
+                            QRegExp rxOperation("(/0020)");
+                            if(rowListMain[rMain][OperationId].isEmpty() || rxOperation.indexIn(rowListMain[rMain][OperationId]) != -1) {
                                 //Факт расхода обрата
                                 const QString cat = "fact";
                                 const QString type = "skmilk";
@@ -1407,16 +1342,16 @@ bool MainWindow::calculation() {
                                         float QtyPlan;
                                         float QtyFact;
                                         float QtyDelivFact;
-                                        QtyPlan = rowListMain[rMain].at(ColumnHeader.indexOf("QuantityPlan")).toFloat();
-                                        QtyFact = rowListMain[rMain].at(ColumnHeader.indexOf("QuantityFact")).toFloat();
-                                        QtyDelivFact = rowListMain[rMain].at(ColumnHeader.indexOf("DeliveryFact")).toFloat();
+                                        QtyPlan = rowListMain[rMain][QuantityPlan].toFloat();
+                                        QtyFact = rowListMain[rMain][QuantityFact].toFloat();
+                                        QtyDelivFact = rowListMain[rMain][DeliveryFact].toFloat();
                                         float Proc;
                                         if(QtyPlan) {
                                             if(QtyFact > QtyDelivFact)
                                                 Proc = QtyFact * 100 / QtyPlan;
                                             else
                                                 Proc = QtyDelivFact * 100 / QtyPlan;
-                                            SumQtyIn = rowListMain[rMain].at(ColumnHeader.indexOf("SkMilkReqPlan")).toFloat() * Proc / 100;
+                                            SumQtyIn = rowListMain[rMain][SkMilkReqPlan].toFloat() * Proc / 100;
                                         }
                                         else  {
                                             SumQtyIn = 0.01;
@@ -1441,46 +1376,44 @@ bool MainWindow::calculation() {
                 }
                 if(rFact == rowListFact.length()-1) {
                     //Для заказов без корректировки
-                    if(rowListMain[rMain].at(ColumnHeader.indexOf("Marker")).indexOf("?") == -1) {
-                        rowListMain[rMain] << QString::number(SumQtyIn + QtyOut);
+                    if(rowListMain[rMain][Marker].indexOf("?") == -1) {
+                        rowListMain[rMain][SkMilkReqFact] = QString::number(SumQtyIn + QtyOut);
                     }
                     //Для скорректированных закрытых заказов
                     else {
-                        float Qty1 = rowListMain[rMain].at(ColumnHeader.indexOf("QuantityFact")).toFloat();
-                        float Qty2 = rowListMain[rMain].at(ColumnHeader.indexOf("DeliveryFact")).toFloat();
+                        float Qty1 = rowListMain[rMain][QuantityFact].toFloat();
+                        float Qty2 = rowListMain[rMain][DeliveryFact].toFloat();
                         if(Qty1 > Qty2) {
                             float Proc = 100 - (Qty2 * 100 / Qty1);
-                            rowListMain[rMain] << QString::number(-1*(SumQtyIn + QtyOut) * Proc / 100);
+                            rowListMain[rMain][SkMilkReqFact] = QString::number(-1*(SumQtyIn + QtyOut) * Proc / 100);
                         }
                         else {
                             float Proc = 100 - (Qty1 * 100 / Qty2);
-                            rowListMain[rMain] << QString::number(-1*(SumQtyIn + QtyOut) * Proc / 100);
+                            rowListMain[rMain][SkMilkReqFact] = QString::number(-1*(SumQtyIn + QtyOut) * Proc / 100);
                         }
                     }
                 }
             }
-        }
-        else {
-            rowListMain[rMain] << "0";
         }
     }
 
 
     //Факт сливок
     for(int rMain = 0; rMain < rowListMain.length(); rMain++) {
-        if(rowListMain[rMain].at(ColumnHeader.indexOf("Marker")).indexOf("!") == -1) {
+        if(rowListMain[rMain][Marker].indexOf("!") == -1) {
             float SumQtyIn = 0.0;
             float QtyOut = 0.0;
             for(int rFact = 1; rFact < rowListFact.length(); rFact++) {
                 bool ok;
                 long long ORDER1;
                 long long ORDER2;
-                ORDER1 = rowListMain[rMain].at(ColumnHeader.indexOf("OrderFact")).toLongLong(&ok, 10);
+                ORDER1 = rowListMain[rMain][OrderFact].toLongLong(&ok, 10);
                 if(ok) {
                     ORDER2 = rowListFact[rFact].at(rowListFact[0].indexOf("AUFNR")).toLongLong(&ok, 10);
                     if(ok) {
                         if(ORDER1 == ORDER2) {
-                            if(rowListMain[rMain].at(ColumnHeader.indexOf("OperationId")).isEmpty() || rxOperation.indexIn(rowListMain[rMain].at(ColumnHeader.indexOf("OperationId"))) != -1) {
+                            QRegExp rxOperation("(/0020)");
+                            if(rowListMain[rMain][OperationId].isEmpty() || rxOperation.indexIn(rowListMain[rMain][OperationId]) != -1) {
                                 //Факт расхода сливок
                                 const QString cat = "fact";
                                 const QString type = "cream";
@@ -1495,16 +1428,16 @@ bool MainWindow::calculation() {
                                         float QtyPlan;
                                         float QtyFact;
                                         float QtyDelivFact;
-                                        QtyPlan = rowListMain[rMain].at(ColumnHeader.indexOf("QuantityPlan")).toFloat();
-                                        QtyFact = rowListMain[rMain].at(ColumnHeader.indexOf("QuantityFact")).toFloat();
-                                        QtyDelivFact = rowListMain[rMain].at(ColumnHeader.indexOf("DeliveryFact")).toFloat();
+                                        QtyPlan = rowListMain[rMain][QuantityPlan].toFloat();
+                                        QtyFact = rowListMain[rMain][QuantityFact].toFloat();
+                                        QtyDelivFact = rowListMain[rMain][DeliveryFact].toFloat();
                                         float Proc;
                                         if(QtyPlan) {
                                             if(QtyFact > QtyDelivFact)
                                                 Proc = QtyFact * 100 / QtyPlan;
                                             else
                                                 Proc = QtyDelivFact * 100 / QtyPlan;
-                                            SumQtyIn = rowListMain[rMain].at(ColumnHeader.indexOf("CreamReqPlan")).toFloat() * Proc / 100;
+                                            SumQtyIn = rowListMain[rMain][CreamReqPlan].toFloat() * Proc / 100;
                                         }
                                         else  {
                                             SumQtyIn = 0.01;
@@ -1529,49 +1462,30 @@ bool MainWindow::calculation() {
                 }
                 if(rFact == rowListFact.length()-1) {
                     //Для заказов без корректировки
-                    if(rowListMain[rMain].at(ColumnHeader.indexOf("Marker")).indexOf("?") == -1) {
-                        rowListMain[rMain] << QString::number(SumQtyIn + QtyOut);
+                    if(rowListMain[rMain][Marker].indexOf("?") == -1) {
+                        rowListMain[rMain][CreamReqFact] = QString::number(SumQtyIn + QtyOut);
                     }
                     //Для скорректированных закрытых заказов
                     else {
-                        float Qty1 = rowListMain[rMain].at(ColumnHeader.indexOf("QuantityFact")).toFloat();
-                        float Qty2 = rowListMain[rMain].at(ColumnHeader.indexOf("DeliveryFact")).toFloat();
+                        float Qty1 = rowListMain[rMain][QuantityFact].toFloat();
+                        float Qty2 = rowListMain[rMain][DeliveryFact].toFloat();
                         if(Qty1 > Qty2) {
                             float Proc = 100 - (Qty2 * 100 / Qty1);
-                            rowListMain[rMain] << QString::number(-1*(SumQtyIn + QtyOut) * Proc / 100);
+                            rowListMain[rMain][CreamReqFact] = QString::number(-1*(SumQtyIn + QtyOut) * Proc / 100);
                         }
                         else {
                             float Proc = 100 - (Qty1 * 100 / Qty2);
-                            rowListMain[rMain] << QString::number(-1*(SumQtyIn + QtyOut) * Proc / 100);
+                            rowListMain[rMain][CreamReqFact] = QString::number(-1*(SumQtyIn + QtyOut) * Proc / 100);
                         }
                     }
                 }
             }
         }
-        else {
-            rowListMain[rMain] << "0";
-        }
     }
 
 
     //План прихода молока
-    //Добавить пустую запись
-    QStringList lstr;
-    for(int i = 0; i < rowListMain[0].length(); i++) {
-        lstr.append("");
-    }
-    rowListMain.append(lstr);
-
-    QStringList strlist;
-    strlist << "MilkReqPlan" << "MilkReqFact"
-            <<"SkMilkReqPlan" << "SkMilkReqFact"
-            << "CreamReqPlan" << "CreamReqFact";
-
-    //Обнулить цифровые значения в строке
-    foreach(QString c, strlist) {
-        rowListMain[rowListMain.length()-1][ColumnHeader.indexOf(c)] = "0";
-    }
-
+    addRowEmpty();
     float Qty = 0.0;
     for(int rStock = 1; rStock < rowListStock.length(); rStock++) {
         const QString cat = "plan";
@@ -1591,21 +1505,14 @@ bool MainWindow::calculation() {
             }
         }
     }
-    rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("ProductLocationId")] = "milk";
-    //rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("StartPlan")] = selectDate.toString("dd.MM.yyyy 00:00:00");
-    rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("EndPlan")] = selectDate.toString("dd.MM.yyyy 23:59:59");
-    rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("OrderPlan")] = "ПРИВОЗ";
-    rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("QuantityPlan")] = QString::number(Qty);
-    rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("MilkReqPlan")] = QString::number(Qty);
+    rowListMain[rowListMain.length()-1][ProductLocationId] = "milk";
+    rowListMain[rowListMain.length()-1][EndPlan] = selectDate.toString("dd.MM.yyyy 23:59:59");
+    rowListMain[rowListMain.length()-1][OrderPlan] = "ПРИВОЗ";
+    rowListMain[rowListMain.length()-1][QuantityPlan] = QString::number(Qty);
+    rowListMain[rowListMain.length()-1][MilkReqPlan] = QString::number(Qty);
 
     //План прихода обрата
-    //Добавить пустую запись
-    rowListMain.append(lstr);
-
-    //Обнулить цифровые значения в строке
-    foreach(QString c, strlist) {
-        rowListMain[rowListMain.length()-1][ColumnHeader.indexOf(c)] = "0";
-    }
+    addRowEmpty();
     Qty = 0.0;
     for(int rStock = 1; rStock < rowListStock.length(); rStock++) {
         const QString cat = "plan";
@@ -1625,22 +1532,15 @@ bool MainWindow::calculation() {
             }
         }
     }
-    rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("ProductLocationId")] = "skimmed milk";
-    //rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("StartPlan")] = selectDate.toString("dd.MM.yyyy 00:00:00");
-    rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("EndPlan")] = selectDate.toString("dd.MM.yyyy 23:59:59");
-    rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("OrderPlan")] = "ПРИВОЗ";
-    rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("QuantityPlan")] = QString::number(Qty);
-    rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("SkMilkReqPlan")] = QString::number(Qty);
+    rowListMain[rowListMain.length()-1][ProductLocationId] = "skimmed milk";
+    rowListMain[rowListMain.length()-1][EndPlan] = selectDate.toString("dd.MM.yyyy 23:59:59");
+    rowListMain[rowListMain.length()-1][OrderPlan] = "ПРИВОЗ";
+    rowListMain[rowListMain.length()-1][QuantityPlan] = QString::number(Qty);
+    rowListMain[rowListMain.length()-1][SkMilkReqPlan] = QString::number(Qty);
 
 
     //План прихода сливок
-    //Добавить пустую запись
-    rowListMain.append(lstr);
-
-    //Обнулить цифровые значения в строке
-    foreach(QString c, strlist) {
-        rowListMain[rowListMain.length()-1][ColumnHeader.indexOf(c)] = "0";
-    }
+    addRowEmpty();
     Qty = 0.0;
     for(int rStock = 1; rStock < rowListStock.length(); rStock++) {
         const QString cat = "plan";
@@ -1660,23 +1560,15 @@ bool MainWindow::calculation() {
             }
         }
     }
-    rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("ProductLocationId")] = "Сливки";
-    //rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("StartPlan")] = selectDate.toString("dd.MM.yyyy 00:00:00");
-    rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("EndPlan")] = selectDate.toString("dd.MM.yyyy 23:59:59");
-    rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("OrderPlan")] = "ПРИВОЗ";
-    rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("QuantityPlan")] = QString::number(Qty);
-    rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("CreamReqPlan")] = QString::number(Qty);
+    rowListMain[rowListMain.length()-1][ProductLocationId] = "Сливки";
+    rowListMain[rowListMain.length()-1][EndPlan] = selectDate.toString("dd.MM.yyyy 23:59:59");
+    rowListMain[rowListMain.length()-1][OrderPlan] = "ПРИВОЗ";
+    rowListMain[rowListMain.length()-1][QuantityPlan] = QString::number(Qty);
+    rowListMain[rowListMain.length()-1][CreamReqPlan] = QString::number(Qty);
 
 
     //Факт прихода молока
-    //Добавить пустую запись
-    rowListMain.append(lstr);
-
-    //Обнулить цифровые значения в строке
-    foreach(QString c, strlist) {
-        rowListMain[rowListMain.length()-1][ColumnHeader.indexOf(c)] = "0";
-    }
-
+    addRowEmpty();
     Qty = 0.0;
     for(int r = 1; r < rowListFactSupply.length(); r++) {
         const QString cat = "fact";
@@ -1695,23 +1587,17 @@ bool MainWindow::calculation() {
             }
         }
     }
-    rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("ProductLocationId")] = "Молоко";
-    rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("StartFact")] = selectDate.toString("dd.MM.yyyy 00:00:00");
-    rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("EndFact")] = selectDate.toString("dd.MM.yyyy 23:59:59");
-    rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("Description")] = "Привоз Молока";
-    rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("OrderFact")] = "ПРИВОЗ";
-    rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("QuantityFact")] = QString::number(Qty);
-    rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("MilkReqFact")] = QString::number(Qty);
+    rowListMain[rowListMain.length()-1][ProductLocationId] = "Молоко";
+    rowListMain[rowListMain.length()-1][StartFact] = selectDate.toString("dd.MM.yyyy 00:00:00");
+    rowListMain[rowListMain.length()-1][EndFact] = selectDate.toString("dd.MM.yyyy 23:59:59");
+    rowListMain[rowListMain.length()-1][Description] = "Привоз Молока";
+    rowListMain[rowListMain.length()-1][OrderFact] = "ПРИВОЗ";
+    rowListMain[rowListMain.length()-1][QuantityFact] = QString::number(Qty);
+    rowListMain[rowListMain.length()-1][MilkReqFact] = QString::number(Qty);
 
 
     //Факт прихода обрата
-    //Добавить пустую запись
-    rowListMain.append(lstr);
-
-    //Обнулить цифровые значения в строке
-    foreach(QString c, strlist) {
-        rowListMain[rowListMain.length()-1][ColumnHeader.indexOf(c)] = "0";
-    }
+    addRowEmpty();
     Qty = 0.0;
     for(int r = 1; r < rowListFactSupply.length(); r++) {
         const QString cat = "fact";
@@ -1730,23 +1616,23 @@ bool MainWindow::calculation() {
             }
         }
     }
-    rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("ProductLocationId")] = "Обезж.молоко";
-    rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("StartFact")] = selectDate.toString("dd.MM.yyyy 00:00:00");
-    rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("EndFact")] = selectDate.toString("dd.MM.yyyy 23:59:59");
-    rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("Description")] = "Привоз Обезж.молока";
-    rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("OrderFact")] = "ПРИВОЗ";
-    rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("QuantityFact")] = QString::number(Qty);
-    rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("SkMilkReqFact")] = QString::number(Qty);
+    rowListMain[rowListMain.length()-1][ProductLocationId] = "Обезж.молоко";
+    rowListMain[rowListMain.length()-1][StartFact] = selectDate.toString("dd.MM.yyyy 00:00:00");
+    rowListMain[rowListMain.length()-1][EndFact] = selectDate.toString("dd.MM.yyyy 23:59:59");
+    rowListMain[rowListMain.length()-1][Description] = "Привоз Обезж.молока";
+    rowListMain[rowListMain.length()-1][OrderFact] = "ПРИВОЗ";
+    rowListMain[rowListMain.length()-1][QuantityFact] = QString::number(Qty);
+    rowListMain[rowListMain.length()-1][SkMilkReqFact] = QString::number(Qty);
 
 
     //Фильтр по молочным компонентам
     for(int rMain = 0; rMain < rowListMain.length(); rMain++) {
-        if(rowListMain[rMain].at(ColumnHeader.indexOf("MilkReqPlan")) == "0" &&
-           rowListMain[rMain].at(ColumnHeader.indexOf("SkMilkReqPlan")) == "0" &&
-           rowListMain[rMain].at(ColumnHeader.indexOf("CreamReqPlan")) == "0" &&
-           rowListMain[rMain].at(ColumnHeader.indexOf("MilkReqFact")) == "0" &&
-           rowListMain[rMain].at(ColumnHeader.indexOf("SkMilkReqFact")) == "0" &&
-           rowListMain[rMain].at(ColumnHeader.indexOf("CreamReqFact")) == "0" ) {
+        if(rowListMain[rMain][MilkReqPlan] == "0" &&
+           rowListMain[rMain][SkMilkReqPlan] == "0" &&
+           rowListMain[rMain][CreamReqPlan] == "0" &&
+           rowListMain[rMain][MilkReqFact] == "0" &&
+           rowListMain[rMain][SkMilkReqFact] == "0" &&
+           rowListMain[rMain][CreamReqFact] == "0" ) {
                 rowListMain.removeAt(rMain);
                 rMain--;
         }
@@ -1756,22 +1642,22 @@ bool MainWindow::calculation() {
     for(int rMain = 0; rMain < rowListMain.length(); rMain++) {
         QDateTime startPlan;
         QDateTime startFact;
-        startPlan = QDateTime::fromString(rowListMain[rMain].at(ColumnHeader.indexOf("StartPlan")), "dd.MM.yyyy hh:mm:ss");
-        startFact = QDateTime::fromString(rowListMain[rMain].at(ColumnHeader.indexOf("StartFact")), "dd.MM.yyyy hh:mm:ss");
-        if(!rowListMain[rMain].at(ColumnHeader.indexOf("OrderPlan")).isEmpty() && rowListMain[rMain].at(ColumnHeader.indexOf("OrderFact")).isEmpty()) {
+        startPlan = QDateTime::fromString(rowListMain[rMain][StartPlan], "dd.MM.yyyy hh:mm:ss");
+        startFact = QDateTime::fromString(rowListMain[rMain][StartFact], "dd.MM.yyyy hh:mm:ss");
+        if(!rowListMain[rMain][OrderPlan].isEmpty() && rowListMain[rMain][OrderFact].isEmpty()) {
             if(startPlan >= QDateTime(selectDate.addDays(1))) {
                 rowListMain.removeAt(rMain);
                 rMain--;
             }
         }
-        else if(!rowListMain[rMain].at(ColumnHeader.indexOf("OrderPlan")).isEmpty() && !rowListMain[rMain].at(ColumnHeader.indexOf("OrderFact")).isEmpty()) {
+        else if(!rowListMain[rMain][OrderPlan].isEmpty() && !rowListMain[rMain][OrderFact].isEmpty()) {
             if(startPlan >= QDateTime(selectDate.addDays(1)) && startFact >= QDateTime(selectDate.addDays(1))) {
                 rowListMain.removeAt(rMain);
                 rMain--;
             }
         }
-        else if(rowListMain[rMain].at(ColumnHeader.indexOf("OrderPlan")).isEmpty() && !rowListMain[rMain].at(ColumnHeader.indexOf("OrderFact")).isEmpty()) {
-            if(rowListMain[rMain].at(ColumnHeader.indexOf("Status")) == "INTL" || rowListMain[rMain].at(ColumnHeader.indexOf("Status")) == "UNTE") {
+        else if(rowListMain[rMain][OrderPlan].isEmpty() && !rowListMain[rMain][OrderFact].isEmpty()) {
+            if(rowListMain[rMain][Status] == "INTL" || rowListMain[rMain][Status] == "UNTE") {
                 if(startFact >= QDateTime(selectDate.addDays(1))) {
                     rowListMain.removeAt(rMain);
                     rMain--;
@@ -1797,7 +1683,7 @@ bool MainWindow::calculation() {
     //Сортировка
     for(int rMain = 0; rMain < rowListMain.length(); rMain++) {
         for(int i = rMain; i < rowListMain.length(); i++) {
-            if(rowListMain[rMain].at(ColumnHeader.indexOf("ProductLocationId")) > rowListMain[i].at(ColumnHeader.indexOf("ProductLocationId"))) {
+            if(rowListMain[rMain][ProductLocationId] > rowListMain[i][ProductLocationId]) {
                 QStringList buffer;
                 buffer = rowListMain[i];
                 rowListMain[i] = rowListMain[rMain];
@@ -1872,35 +1758,27 @@ void MainWindow::on_action_About_triggered()
 
 void MainWindow::addTotalReq() {
     //Добавить пустую запись
-    QStringList s;
-    for(int i = 0; i < ColumnHeader.length(); i++) {
-        s.append("");
-    }
-    rowListMain.append(s);
-    rowListMain.append(s);
+    addRowEmpty();
+    addRowEmpty();
 
-    QStringList strlist;
-    strlist << "MilkReqPlan" << "MilkReqFact" << "MilkDelta"
-            << "SkMilkReqPlan" << "SkMilkReqFact" << "SkMilkDelta"
-            << "CreamReqPlan" << "CreamReqFact" << "CreamDelta";
     //Обнулить цифровые значения в строке
-    foreach(QString c, strlist) {
+    for(int i = Column::MilkReqPlan; i <= Column::CreamDelta; i++) {
         float QtyMinus = 0;
         float QtyPlus = 0;
         for(int rMain = 0; rMain < rowListMain.length(); rMain++) {
-            if(rowListMain[rMain].at(ColumnHeader.indexOf(c)).left(1) == "-") {
-                QtyMinus += rowListMain[rMain].at(ColumnHeader.indexOf(c)).toFloat();
+            if(rowListMain[rMain][i].left(1) == "-") {
+                QtyMinus += rowListMain[rMain][i].toFloat();
             }
             else {
-                QtyPlus += rowListMain[rMain].at(ColumnHeader.indexOf(c)).toFloat();
+                QtyPlus += rowListMain[rMain][i].toFloat();
             }
         }
 
-        rowListMain[rowListMain.length()-2][ColumnHeader.indexOf("DeliveryFact")] = "Расход:";
-        rowListMain[rowListMain.length()-2][ColumnHeader.indexOf(c)] = QString::number(QtyMinus / 1000, 'f', 1) + "т.";
+        rowListMain[rowListMain.length()-2][DeliveryFact] = "Расход:";
+        rowListMain[rowListMain.length()-2][i] = QString::number(QtyMinus / 1000, 'f', 1) + "т.";
 
-        rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("DeliveryFact")] = "Приход:";
-        rowListMain[rowListMain.length()-1][ColumnHeader.indexOf(c)] = QString::number(QtyPlus / 1000, 'f', 1) + "т.";
+        rowListMain[rowListMain.length()-1][DeliveryFact] = "Приход:";
+        rowListMain[rowListMain.length()-1][i] = QString::number(QtyPlus / 1000, 'f', 1) + "т.";
     }
 }
 
@@ -1911,9 +1789,9 @@ void MainWindow::deltaTotalStock(QString type) {
         for(int rMain = 0; rMain < rowListMain.length(); rMain++) {
             float QtyPlan = 0;
             float QtyFact = 0;
-            QtyPlan = rowListMain[rMain].at(ColumnHeader.indexOf("MilkReqPlan")).toFloat();
-            QtyFact = rowListMain[rMain].at(ColumnHeader.indexOf("MilkReqFact")).toFloat();
-            rowListMain[rMain] << QString::number(-1.0*(QtyPlan - QtyFact));
+            QtyPlan = rowListMain[rMain][MilkReqPlan].toFloat();
+            QtyFact = rowListMain[rMain][MilkReqFact].toFloat();
+            rowListMain[rMain][MilkDelta] = QString::number(-1.0*(QtyPlan - QtyFact));
         }
     }
     //Дельта по обрату
@@ -1921,9 +1799,9 @@ void MainWindow::deltaTotalStock(QString type) {
         for(int rMain = 0; rMain < rowListMain.length(); rMain++) {
             float QtyPlan = 0;
             float QtyFact = 0;
-            QtyPlan = rowListMain[rMain].at(ColumnHeader.indexOf("SkMilkReqPlan")).toFloat();
-            QtyFact = rowListMain[rMain].at(ColumnHeader.indexOf("SkMilkReqFact")).toFloat();
-            rowListMain[rMain] << QString::number(-1.0*(QtyPlan - QtyFact));
+            QtyPlan = rowListMain[rMain][SkMilkReqPlan].toFloat();
+            QtyFact = rowListMain[rMain][SkMilkReqFact].toFloat();
+            rowListMain[rMain][SkMilkDelta] = QString::number(-1.0*(QtyPlan - QtyFact));
         }
     }
     //Дельта по сливкам
@@ -1931,9 +1809,9 @@ void MainWindow::deltaTotalStock(QString type) {
         for(int rMain = 0; rMain < rowListMain.length(); rMain++) {
             float QtyPlan = 0;
             float QtyFact = 0;
-            QtyPlan = rowListMain[rMain].at(ColumnHeader.indexOf("CreamReqPlan")).toFloat();
-            QtyFact = rowListMain[rMain].at(ColumnHeader.indexOf("CreamReqFact")).toFloat();
-            rowListMain[rMain] << QString::number(-1.0*(QtyPlan - QtyFact));
+            QtyPlan = rowListMain[rMain][CreamReqPlan].toFloat();
+            QtyFact = rowListMain[rMain][CreamReqFact].toFloat();
+            rowListMain[rMain][CreamDelta] = QString::number(-1.0*(QtyPlan - QtyFact));
         }
     }
 }
@@ -1985,22 +1863,25 @@ bool MainWindow::isComponent(const QString *Category, const QString *Type, const
 //Промежуточные итоги
 void MainWindow::addSubTotalRow() {
     for(int rMain = 0; rMain < rowListMain.length()-1; rMain++) {
-        if(rowListMain[rMain].at(ColumnHeader.indexOf("ProductLocationId")) != rowListMain[rMain+1].at(ColumnHeader.indexOf("ProductLocationId"))) {
+        if(rowListMain[rMain][ProductLocationId] != rowListMain[rMain+1][ProductLocationId]) {
+
             //Добавить пустую запись
             QStringList lstr;
-            for(int i = 0; i < ColumnHeader.length(); i++) {
+            for(int i = 0; i <= Column::CreamDelta; i++) {
                 lstr.append("");
             }
             rowListMain.insert(rMain+1, lstr);
 
-            QStringList strlist;
-            strlist << "MilkReqPlan" << "MilkReqFact" <<"SkMilkReqPlan"
-                    << "SkMilkReqFact" << "CreamReqPlan" << "CreamReqFact"
-                    << "MilkDelta" << "SkMilkDelta" << "CreamDelta";
             //Обнулить цифровые значения в строке
-            foreach(QString s, strlist) {
-                rowListMain[rMain+1][ColumnHeader.indexOf(s)] = "0";
-            }
+            rowListMain[rMain+1][MilkReqPlan] = "0";
+            rowListMain[rMain+1][MilkReqFact] = "0";
+            rowListMain[rMain+1][SkMilkReqPlan] = "0";
+            rowListMain[rMain+1][SkMilkReqFact] = "0";
+            rowListMain[rMain+1][CreamReqPlan] = "0";
+            rowListMain[rMain+1][CreamReqFact] = "0";
+            rowListMain[rMain+1][MilkDelta] = "0";
+            rowListMain[rMain+1][SkMilkDelta] = "0";
+            rowListMain[rMain+1][CreamDelta] = "0";
 
             float QtyTotalMilkPlan = 0;
             float QtyTotalMilkFact = 0;
@@ -2013,28 +1894,28 @@ void MainWindow::addSubTotalRow() {
             float QtyTotalCreamDelta = 0;
 
             for(int i = rMain; i >= 0; i--) {
-                if(!rowListMain[i].at(ColumnHeader.indexOf("ProductLocationId")).isEmpty()) {
-                    QtyTotalMilkPlan += rowListMain[i].at(ColumnHeader.indexOf("MilkReqPlan")).toFloat();
-                    QtyTotalMilkFact += rowListMain[i].at(ColumnHeader.indexOf("MilkReqFact")).toFloat();
-                    QtyTotalSkMilkPlan += rowListMain[i].at(ColumnHeader.indexOf("SkMilkReqPlan")).toFloat();
-                    QtyTotalSkMilkFact += rowListMain[i].at(ColumnHeader.indexOf("SkMilkReqFact")).toFloat();
-                    QtyTotalCreamPlan += rowListMain[i].at(ColumnHeader.indexOf("CreamReqPlan")).toFloat();
-                    QtyTotalCreamFact += rowListMain[i].at(ColumnHeader.indexOf("CreamReqFact")).toFloat();
-                    QtyTotalMilkDelta += rowListMain[i].at(ColumnHeader.indexOf("MilkDelta")).toFloat();
-                    QtyTotalSkMilkDelta += rowListMain[i].at(ColumnHeader.indexOf("SkMilkDelta")).toFloat();
-                    QtyTotalCreamDelta += rowListMain[i].at(ColumnHeader.indexOf("CreamDelta")).toFloat();
+                if(!rowListMain[i][ProductLocationId].isEmpty()) {
+                    QtyTotalMilkPlan += rowListMain[i][MilkReqPlan].toFloat();
+                    QtyTotalMilkFact += rowListMain[i][MilkReqFact].toFloat();
+                    QtyTotalSkMilkPlan += rowListMain[i][SkMilkReqPlan].toFloat();
+                    QtyTotalSkMilkFact += rowListMain[i][SkMilkReqFact].toFloat();
+                    QtyTotalCreamPlan += rowListMain[i][CreamReqPlan].toFloat();
+                    QtyTotalCreamFact += rowListMain[i][CreamReqFact].toFloat();
+                    QtyTotalMilkDelta += rowListMain[i][MilkDelta].toFloat();
+                    QtyTotalSkMilkDelta += rowListMain[i][SkMilkDelta].toFloat();
+                    QtyTotalCreamDelta += rowListMain[i][CreamDelta].toFloat();
                 }
                 else break;
             }
-            rowListMain[rMain+1][ColumnHeader.indexOf("MilkReqPlan")] = QString::number(QtyTotalMilkPlan);
-            rowListMain[rMain+1][ColumnHeader.indexOf("MilkReqFact")] = QString::number(QtyTotalMilkFact);
-            rowListMain[rMain+1][ColumnHeader.indexOf("SkMilkReqPlan")] = QString::number(QtyTotalSkMilkPlan);
-            rowListMain[rMain+1][ColumnHeader.indexOf("SkMilkReqFact")] = QString::number(QtyTotalSkMilkFact);
-            rowListMain[rMain+1][ColumnHeader.indexOf("CreamReqPlan")] = QString::number(QtyTotalCreamPlan);
-            rowListMain[rMain+1][ColumnHeader.indexOf("CreamReqFact")] = QString::number(QtyTotalCreamFact);
-            rowListMain[rMain+1][ColumnHeader.indexOf("MilkDelta")] = QString::number(QtyTotalMilkDelta);
-            rowListMain[rMain+1][ColumnHeader.indexOf("SkMilkDelta")] = QString::number(QtyTotalSkMilkDelta);
-            rowListMain[rMain+1][ColumnHeader.indexOf("CreamDelta")] = QString::number(QtyTotalCreamDelta);
+            rowListMain[rMain+1][MilkReqPlan] = QString::number(QtyTotalMilkPlan);
+            rowListMain[rMain+1][MilkReqFact] = QString::number(QtyTotalMilkFact);
+            rowListMain[rMain+1][SkMilkReqPlan] = QString::number(QtyTotalSkMilkPlan);
+            rowListMain[rMain+1][SkMilkReqFact] = QString::number(QtyTotalSkMilkFact);
+            rowListMain[rMain+1][CreamReqPlan] = QString::number(QtyTotalCreamPlan);
+            rowListMain[rMain+1][CreamReqFact] = QString::number(QtyTotalCreamFact);
+            rowListMain[rMain+1][MilkDelta] = QString::number(QtyTotalMilkDelta);
+            rowListMain[rMain+1][SkMilkDelta] = QString::number(QtyTotalSkMilkDelta);
+            rowListMain[rMain+1][CreamDelta] = QString::number(QtyTotalCreamDelta);
             rMain++;
         }
     }
@@ -2043,102 +1924,88 @@ void MainWindow::addSubTotalRow() {
 
 //Итоги
 void MainWindow::addTotalRow() {
-    //Добавить пустую запись
-    QStringList s;
-    for(int i = 0; i < ColumnHeader.length(); i++) {
-        s.append("");
-    }
-    rowListMain.append(s);
-    rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("DeliveryFact")] = "Итог:";
+    addRowEmpty();
 
-    QStringList strlist;
-    strlist << "MilkReqPlan" << "MilkReqFact"
-            <<"SkMilkReqPlan" << "SkMilkReqFact"
-            << "CreamReqPlan" << "CreamReqFact"
-            << "MilkDelta" << "SkMilkDelta" << "CreamDelta";
-    //Обнулить цифровые значения в строке
-    foreach(QString s, strlist) {
-        rowListMain[rowListMain.length()-1][ColumnHeader.indexOf(s)] = "0";
-    }
+    rowListMain[rowListMain.length()-1][DeliveryFact] = "Итог:";
 
     float QtyTotal = 0;
     QtyTotal = 0;
     for(int rMain = 0; rMain < rowListMain.length(); rMain++) {
-        if(!rowListMain[rMain].at(ColumnHeader.indexOf("ProductLocationId")).isEmpty()) {
-            QtyTotal += rowListMain[rMain].at(ColumnHeader.indexOf("MilkReqPlan")).toFloat();
+        if(!rowListMain[rMain][ProductLocationId].isEmpty()) {
+            QtyTotal += rowListMain[rMain][MilkReqPlan].toFloat();
         }
     }
-    rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("MilkReqPlan")] = QString::number(QtyTotal / 1000, 'f', 1) + "т.";
+    rowListMain[rowListMain.length()-1][MilkReqPlan] = QString::number(QtyTotal / 1000, 'f', 1) + "т.";
 
 
     QtyTotal = 0;
     for(int rMain = 0; rMain < rowListMain.length(); rMain++) {
-        if(!rowListMain[rMain].at(ColumnHeader.indexOf("ProductLocationId")).isEmpty()) {
-            QtyTotal += rowListMain[rMain].at(ColumnHeader.indexOf("MilkReqFact")).toFloat();
+        if(!rowListMain[rMain][ProductLocationId].isEmpty()) {
+            QtyTotal += rowListMain[rMain][MilkReqFact].toFloat();
         }
     }
-    rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("MilkReqFact")] = QString::number(QtyTotal / 1000, 'f', 1) + "т.";
+    rowListMain[rowListMain.length()-1][MilkReqFact] = QString::number(QtyTotal / 1000, 'f', 1) + "т.";
 
 
     QtyTotal = 0;
     for(int rMain = 0; rMain < rowListMain.length(); rMain++) {
-        if(!rowListMain[rMain].at(ColumnHeader.indexOf("ProductLocationId")).isEmpty()) {
-            QtyTotal += rowListMain[rMain].at(ColumnHeader.indexOf("SkMilkReqPlan")).toFloat();
+        if(!rowListMain[rMain][ProductLocationId].isEmpty()) {
+            QtyTotal += rowListMain[rMain][SkMilkReqPlan].toFloat();
         }
     }
-    rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("SkMilkReqPlan")] = QString::number(QtyTotal / 1000, 'f', 1) + "т.";
+    rowListMain[rowListMain.length()-1][SkMilkReqPlan] = QString::number(QtyTotal / 1000, 'f', 1) + "т.";
 
     QtyTotal = 0;
     for(int rMain = 0; rMain < rowListMain.length(); rMain++) {
-        if(!rowListMain[rMain].at(ColumnHeader.indexOf("ProductLocationId")).isEmpty()) {
-            QtyTotal += rowListMain[rMain].at(ColumnHeader.indexOf("SkMilkReqFact")).toFloat();
+        if(!rowListMain[rMain][ProductLocationId].isEmpty()) {
+            QtyTotal += rowListMain[rMain][SkMilkReqFact].toFloat();
         }
     }
-    rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("SkMilkReqFact")] = QString::number(QtyTotal / 1000, 'f', 1) + "т.";
+    rowListMain[rowListMain.length()-1][SkMilkReqFact] = QString::number(QtyTotal / 1000, 'f', 1) + "т.";
 
     QtyTotal = 0;
     for(int rMain = 0; rMain < rowListMain.length(); rMain++) {
-        if(!rowListMain[rMain].at(ColumnHeader.indexOf("ProductLocationId")).isEmpty()) {
-            QtyTotal += rowListMain[rMain].at(ColumnHeader.indexOf("CreamReqPlan")).toFloat();
+        if(!rowListMain[rMain][ProductLocationId].isEmpty()) {
+            QtyTotal += rowListMain[rMain][CreamReqPlan].toFloat();
         }
     }
-    rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("CreamReqPlan")] = QString::number(QtyTotal / 1000, 'f', 1) + "т.";
-
-
-    QtyTotal = 0;
-    for(int rMain = 0; rMain < rowListMain.length(); rMain++) {
-        if(!rowListMain[rMain].at(ColumnHeader.indexOf("ProductLocationId")).isEmpty()) {
-            QtyTotal += rowListMain[rMain].at(ColumnHeader.indexOf("CreamReqFact")).toFloat();
-        }
-    }
-    rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("CreamReqFact")] = QString::number(QtyTotal / 1000, 'f', 1) + "т.";
+    rowListMain[rowListMain.length()-1][CreamReqPlan] = QString::number(QtyTotal / 1000, 'f', 1) + "т.";
 
 
     QtyTotal = 0;
     for(int rMain = 0; rMain < rowListMain.length(); rMain++) {
-        if(!rowListMain[rMain].at(ColumnHeader.indexOf("ProductLocationId")).isEmpty()) {
-            QtyTotal += rowListMain[rMain].at(ColumnHeader.indexOf("MilkDelta")).toFloat();
+        if(!rowListMain[rMain][ProductLocationId].isEmpty()) {
+            QtyTotal += rowListMain[rMain][CreamReqFact].toFloat();
         }
     }
-    rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("MilkDelta")] = QString::number(QtyTotal / 1000, 'f', 1) + "т.";
+    rowListMain[rowListMain.length()-1][CreamReqFact] = QString::number(QtyTotal / 1000, 'f', 1) + "т.";
 
 
     QtyTotal = 0;
     for(int rMain = 0; rMain < rowListMain.length(); rMain++) {
-        if(!rowListMain[rMain].at(ColumnHeader.indexOf("ProductLocationId")).isEmpty()) {
-            QtyTotal += rowListMain[rMain].at(ColumnHeader.indexOf("SkMilkDelta")).toFloat();
+        if(!rowListMain[rMain][ProductLocationId].isEmpty()) {
+            QtyTotal += rowListMain[rMain][MilkDelta].toFloat();
         }
     }
-    rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("SkMilkDelta")] = QString::number(QtyTotal / 1000, 'f', 1) + "т.";
+    rowListMain[rowListMain.length()-1][MilkDelta] = QString::number(QtyTotal / 1000, 'f', 1) + "т.";
 
 
     QtyTotal = 0;
     for(int rMain = 0; rMain < rowListMain.length(); rMain++) {
-        if(!rowListMain[rMain].at(ColumnHeader.indexOf("ProductLocationId")).isEmpty()) {
-            QtyTotal += rowListMain[rMain].at(ColumnHeader.indexOf("CreamDelta")).toFloat();
+        if(!rowListMain[rMain][ProductLocationId].isEmpty()) {
+            QtyTotal += rowListMain[rMain][SkMilkDelta].toFloat();
         }
     }
-    rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("CreamDelta")] = QString::number(QtyTotal / 1000, 'f', 1) + "т.";
+    rowListMain[rowListMain.length()-1][SkMilkDelta] = QString::number(QtyTotal / 1000, 'f', 1) + "т.";
+
+
+    QtyTotal = 0;
+    for(int rMain = 0; rMain < rowListMain.length(); rMain++) {
+        if(!rowListMain[rMain][ProductLocationId].isEmpty()) {
+            QtyTotal += rowListMain[rMain][CreamDelta].toFloat();
+        }
+    }
+    rowListMain[rowListMain.length()-1][CreamDelta] = QString::number(QtyTotal / 1000, 'f', 1) + "т.";
 }
 
 
@@ -2286,11 +2153,11 @@ bool MainWindow::loadCriteria() {
 //Срез по времени
 void MainWindow::slicetime() {
     for(int rMain = 0; rMain < rowListMain.length(); rMain++) {
-        if(!rowListMain[rMain].at(ColumnHeader.indexOf("OrderPlan")).isEmpty()) {
+        if(!rowListMain[rMain][OrderPlan].isEmpty()) {
             QDateTime start;
             QDateTime end;
-            start = QDateTime::fromString(rowListMain[rMain].at(ColumnHeader.indexOf("StartPlan")), "dd.MM.yyyy hh:mm:ss");
-            end = QDateTime::fromString(rowListMain[rMain].at(ColumnHeader.indexOf("EndPlan")), "dd.MM.yyyy hh:mm:ss");
+            start = QDateTime::fromString(rowListMain[rMain][StartPlan], "dd.MM.yyyy hh:mm:ss");
+            end = QDateTime::fromString(rowListMain[rMain][EndPlan], "dd.MM.yyyy hh:mm:ss");
             if(start < QDateTime(selectDate.addDays(1)) && end > QDateTime(selectDate.addDays(1))) {
                 float Qty;
                 int Duration;
@@ -2299,45 +2166,39 @@ void MainWindow::slicetime() {
                 //Общая длительность заказа
                 Duration = start.secsTo(end);
 
-                //Плановое кол-во
-                //Qty = rowListMain[rMain].at(ColumnHeader.indexOf("QuantityPlan")).toFloat();
-                //QtyInSec = 1 * Qty / Duration;
-                //Qty = start.secsTo(QDateTime(selectDate.addDays(1))) * QtyInSec;
-                //rowListMain[rMain][ColumnHeader.indexOf("QuantityPlan")] = QString::number(Qty);
-
                 //Плановый расход молока
-                Qty = rowListMain[rMain].at(ColumnHeader.indexOf("MilkReqPlan")).toFloat();
+                Qty = rowListMain[rMain][MilkReqPlan].toFloat();
                 QtyInSec = 1 * Qty / Duration;
                 Qty = start.secsTo(QDateTime(selectDate.addDays(1))) * QtyInSec;
-                rowListMain[rMain][ColumnHeader.indexOf("MilkReqPlan")] = QString::number(Qty);
+                rowListMain[rMain][MilkReqPlan] = QString::number(Qty);
 
                 //Плановый расход обрата
-                Qty = rowListMain[rMain].at(ColumnHeader.indexOf("SkMilkReqPlan")).toFloat();
+                Qty = rowListMain[rMain][SkMilkReqPlan].toFloat();
                 QtyInSec = 1 * Qty / Duration;
                 Qty = start.secsTo(QDateTime(selectDate.addDays(1))) * QtyInSec;
-                rowListMain[rMain][ColumnHeader.indexOf("SkMilkReqPlan")] = QString::number(Qty);
+                rowListMain[rMain][SkMilkReqPlan] = QString::number(Qty);
 
                 //Плановый расход сливок
-                Qty = rowListMain[rMain].at(ColumnHeader.indexOf("CreamReqPlan")).toFloat();
+                Qty = rowListMain[rMain][CreamReqPlan].toFloat();
                 QtyInSec = 1 * Qty / Duration;
                 Qty = start.secsTo(QDateTime(selectDate.addDays(1))) * QtyInSec;
-                rowListMain[rMain][ColumnHeader.indexOf("CreamReqPlan")] = QString::number(Qty);
+                rowListMain[rMain][CreamReqPlan] = QString::number(Qty);
             }
             if(start >= QDateTime(selectDate.addDays(1))) {
                 //Плановый расход молока
-                rowListMain[rMain][ColumnHeader.indexOf("MilkReqPlan")] = "0";
+                rowListMain[rMain][MilkReqPlan] = "0";
                 //Плановый расход обрата
-                rowListMain[rMain][ColumnHeader.indexOf("SkMilkReqPlan")] = "0";
+                rowListMain[rMain][SkMilkReqPlan] = "0";
                 //Плановый расход сливок
-                rowListMain[rMain][ColumnHeader.indexOf("CreamReqPlan")] = "0";
+                rowListMain[rMain][CreamReqPlan] = "0";
             }
         }
-        if(!rowListMain[rMain].at(ColumnHeader.indexOf("OrderFact")).isEmpty() &&
-        (rowListMain[rMain].at(ColumnHeader.indexOf("Status")) == "INTL" || rowListMain[rMain].at(ColumnHeader.indexOf("Status")) == "UNTE")) {
+        if(!rowListMain[rMain][OrderFact].isEmpty() &&
+        (rowListMain[rMain][Status] == "INTL" || rowListMain[rMain][Status] == "UNTE")) {
             QDateTime start;
             QDateTime end;
-            start = QDateTime::fromString(rowListMain[rMain].at(ColumnHeader.indexOf("StartFact")), "dd.MM.yyyy hh:mm:ss");
-            end = QDateTime::fromString(rowListMain[rMain].at(ColumnHeader.indexOf("EndFact")), "dd.MM.yyyy hh:mm:ss");
+            start = QDateTime::fromString(rowListMain[rMain][StartFact], "dd.MM.yyyy hh:mm:ss");
+            end = QDateTime::fromString(rowListMain[rMain][EndFact], "dd.MM.yyyy hh:mm:ss");
             if(start < QDateTime(selectDate.addDays(1)) && end > QDateTime(selectDate.addDays(1))) {
                 float Qty;
                 int Duration;
@@ -2345,37 +2206,31 @@ void MainWindow::slicetime() {
                 //Общая длительность заказа
                 Duration = start.secsTo(end);
 
-                //Кол-во заказа
-                //Qty = rowListMain[rMain].at(ColumnHeader.indexOf("QuantityFact")).toFloat();
-                //QtyInSec = 1 * Qty / Duration;
-                //Qty = start.secsTo(QDateTime(selectDate.addDays(1))) * QtyInSec;
-                //rowListMain[rMain][ColumnHeader.indexOf("QuantityFact")] = QString::number(Qty);
-
                 //Фактический расход молока
-                Qty = rowListMain[rMain].at(ColumnHeader.indexOf("MilkReqFact")).toFloat();
+                Qty = rowListMain[rMain][MilkReqFact].toFloat();
                 QtyInSec = 1 * Qty / Duration;
                 Qty = start.secsTo(QDateTime(selectDate.addDays(1))) * QtyInSec;
-                rowListMain[rMain][ColumnHeader.indexOf("MilkReqFact")] = QString::number(Qty);
+                rowListMain[rMain][MilkReqFact] = QString::number(Qty);
 
                 //Фактический расход обрата
-                Qty = rowListMain[rMain].at(ColumnHeader.indexOf("SkMilkReqFact")).toFloat();
+                Qty = rowListMain[rMain][SkMilkReqFact].toFloat();
                 QtyInSec = 1 * Qty / Duration;
                 Qty = start.secsTo(QDateTime(selectDate.addDays(1))) * QtyInSec;
-                rowListMain[rMain][ColumnHeader.indexOf("SkMilkReqFact")] = QString::number(Qty);
+                rowListMain[rMain][SkMilkReqFact] = QString::number(Qty);
 
                 //Фактический расход сливок
-                Qty = rowListMain[rMain].at(ColumnHeader.indexOf("CreamReqFact")).toFloat();
+                Qty = rowListMain[rMain][CreamReqFact].toFloat();
                 QtyInSec = 1 * Qty / Duration;
                 Qty = start.secsTo(QDateTime(selectDate.addDays(1))) * QtyInSec;
-                rowListMain[rMain][ColumnHeader.indexOf("CreamReqFact")] = QString::number(Qty);
+                rowListMain[rMain][CreamReqFact] = QString::number(Qty);
             }
             if(start >= QDateTime(selectDate.addDays(1))) {
                 //Фактический расход молока
-                rowListMain[rMain][ColumnHeader.indexOf("MilkReqFact")] = "0";
+                rowListMain[rMain][MilkReqFact] = "0";
                 //Фактический расход обрата
-                rowListMain[rMain][ColumnHeader.indexOf("SkMilkReqFact")] = "0";
+                rowListMain[rMain][SkMilkReqFact] = "0";
                 //Фактический расход сливок
-                rowListMain[rMain][ColumnHeader.indexOf("CreamReqFact")] = "0";
+                rowListMain[rMain][CreamReqFact] = "0";
             }
         }
     }
@@ -2386,3 +2241,26 @@ void MainWindow::on_action_Exit_triggered()
 {
     QApplication::exit();
 }
+
+
+//Добавить пустую запись
+void MainWindow::addRowEmpty() {
+    QStringList lstr;
+
+    for(int i = 0; i <= Column::CreamDelta; i++) {
+        lstr.append("");
+    }
+    rowListMain.append(lstr);
+
+    //Обнулить цифровые значения в строке
+    rowListMain[rowListMain.length()-1][MilkReqPlan] = "0";
+    rowListMain[rowListMain.length()-1][MilkReqFact] = "0";
+    rowListMain[rowListMain.length()-1][SkMilkReqPlan] = "0";
+    rowListMain[rowListMain.length()-1][SkMilkReqFact] = "0";
+    rowListMain[rowListMain.length()-1][CreamReqPlan] = "0";
+    rowListMain[rowListMain.length()-1][CreamReqFact] = "0";
+    rowListMain[rowListMain.length()-1][MilkDelta] = "0";
+    rowListMain[rowListMain.length()-1][SkMilkDelta] = "0";
+    rowListMain[rowListMain.length()-1][CreamDelta] = "0";
+}
+
