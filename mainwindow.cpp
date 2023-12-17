@@ -16,11 +16,11 @@ MainWindow::MainWindow(QWidget *parent)
     ui->setupUi(this);
 
     //Версия
-    version = "2.3.0";
+    version = "2.4.0";
 
     //Дата
-    ui->dateEdit->setDate(QDateTime::currentDateTime().date());
-    //ui->dateEdit->setDate(QDate(2023, 12, 7));
+    ui->dateEdit->setDate(QDateTime::currentDateTime().date().addDays(-1));
+    //ui->dateEdit->setDate(QDate(2023, 12, 12));
 
     //Инициализация дисков для поиска маршрута
     const QStringList lstDisk = { "D", "C", "E" };
@@ -169,6 +169,7 @@ bool MainWindow::on_pushButtonStart_clicked()
     rowListStock.clear();
     rowListFact.clear();
     rowListFactPrevous.clear();
+    rowListFactSupply.clear();
 
     listMilkPlan.clear();
     listSkMilkPlan.clear();
@@ -180,6 +181,7 @@ bool MainWindow::on_pushButtonStart_clicked()
     pathdirplan.clear();
     namefileplanmask.clear();
     internalpathdirfact.clear();
+    internalpathdirsupply.clear();
     user.clear();
     admin.clear();
 
@@ -257,6 +259,10 @@ bool MainWindow::on_pushButtonStart_clicked()
                     if(strlist[0] == "internalpathdirfact") {
                         internalpathdirfact = strlist[1];
                     }
+                    //Внутренняя директория приходов
+                    if(strlist[0] == "internalpathdirsupply") {
+                        internalpathdirsupply = strlist[1];
+                    }
                     //Список админов
                     if(strlist[0] == "admin") {
                         admin << strlist;
@@ -283,7 +289,7 @@ bool MainWindow::on_pushButtonStart_clicked()
             return false;
         }
         //Загрузка файла с фактом
-        if(!loadFileFact(pathFactFile, pathFactFilePrevious)) {
+        if(!loadFileFact(&pathFactFile, &pathFactFilePrevious, &pathFactFileSupply)) {
             ui->pushButtonStart->setEnabled(true);
             ui->dateEdit->setEnabled(true);
             ui->comboBoxPlant->setEnabled(true);
@@ -377,7 +383,7 @@ bool MainWindow::on_pushButtonStart_clicked()
             return false;
         }
         //Загрузка файлов с фактом
-        if(!loadFileFact(pathFactFile, pathFactFilePrevious)) {
+        if(!loadFileFact(&pathFactFile, &pathFactFilePrevious, &pathFactFileSupply)) {
             ui->pushButtonStart->setEnabled(true);
             ui->dateEdit->setEnabled(true);
             ui->comboBoxPlant->setEnabled(true);
@@ -418,8 +424,8 @@ bool MainWindow::findFileFact() {
     fileFactPrevious = "";
     pathFactFilePrevious = "";
 
-    QStringList listFiles;
     //Поиск файла с фактом
+    QStringList listFiles;
     listFiles = QDir(pathFact + "/" + internalpathdirfact + "/" + selectPlant).entryList(QStringList()
                 << internalpathdirfact + "_" + selectDate.toString("dd.MM.yyyy") + "_21_??_??.csv",
                 QDir::Files);
@@ -432,8 +438,9 @@ bool MainWindow::findFileFact() {
         labelstatus->setText("Ошибка. Фактические данные не найдены.");
         return false;
     }
-    listFiles.clear();
+
     //Поиск прошлого файла с фактом
+    listFiles.clear();
     listFiles = QDir(pathFact + "/" + internalpathdirfact + "/" + selectPlant).entryList(QStringList()
                 << internalpathdirfact + "_" + selectDate.addDays(-1).toString("dd.MM.yyyy") + "_21_??_??.csv",
                 QDir::Files);
@@ -447,15 +454,33 @@ bool MainWindow::findFileFact() {
                                                                  "Для некоторых заказов, точность расчета может быть снижена.");
         return true;
     }
+
+    //Поиск файла фактических приходов
+    listFiles.clear();
+    listFiles = QDir(pathFact + "/" + internalpathdirsupply).entryList(QStringList()
+                << internalpathdirsupply + "_" + selectDate.toString("dd.MM.yyyy") + "_21_??_??.csv",
+                QDir::Files);
+    if(!listFiles.isEmpty()) {
+        fileFactSupply = listFiles[0];
+        //Записать полный путь к файлу
+        pathFactFileSupply = pathFact + "/" + internalpathdirsupply + "/" + fileFactSupply;
+    }
+    else {
+        QMessageBox::warning(0,"Не найден факт приходов", "Внимание, часть фактических данных по приходам не найдена.\n"
+                                                                 "Точность расчета может быть снижена.");
+        return true;
+    }
     return true;
 }
 
 
 //Загрузка фактических данных
-bool MainWindow::loadFileFact(const QString &pathfile, const QString &pathfileprevious) {
+bool MainWindow::loadFileFact(const QString *pathfile,
+                              const QString *pathfileprevious,
+                              const QString *pathfilesupply) {
     //Загрузка факта
-    QFile f(pathfile);
-    if(QFile::exists(pathfile)) {
+    QFile f(*pathfile);
+    if(QFile::exists(*pathfile)) {
         if(!f.open(QIODevice::ReadOnly | QIODevice::Text)) {
             qDebug() << "Error read file pathfile";
             return false;
@@ -480,9 +505,37 @@ bool MainWindow::loadFileFact(const QString &pathfile, const QString &pathfilepr
         f.close();
     }
 
+    //Корректировка пустых значений времени
+    for(int i = 1; i < rowListFact.length(); i++) {
+        //Фактичекое время начала
+        if(rowListFact[i].at(rowListFact[0].indexOf("GSUZP")).isEmpty()) {
+            rowListFact[i].replace(rowListFact[0].indexOf("GSUZP"), "00:00:00");
+        }
+        //Фактическое время конца
+        if(rowListFact[i].at(rowListFact[0].indexOf("GLUZP")).isEmpty()) {
+            rowListFact[i].replace(rowListFact[0].indexOf("GLUZP"), "00:00:01");
+        }
+        //Плановое время начала
+        if(rowListFact[i].at(rowListFact[0].indexOf("GSUZP")).isEmpty()) {
+            rowListFact[i].replace(rowListFact[0].indexOf("GSUZP"), "00:00:00");
+        }
+        //Фактическое время конца
+        if(rowListFact[i].at(rowListFact[0].indexOf("GLUZP")).isEmpty()) {
+            rowListFact[i].replace(rowListFact[0].indexOf("GLUZP"), "00:00:01");
+        }
+        //Время создания
+        if(rowListFact[i].at(rowListFact[0].indexOf("ERFZEIT")).isEmpty()) {
+            rowListFact[i].replace(rowListFact[0].indexOf("ERFZEIT"), "00:00:00");
+        }
+        //Время изменения
+        if(rowListFact[i].at(rowListFact[0].indexOf("AEZEIT")).isEmpty()) {
+            rowListFact[i].replace(rowListFact[0].indexOf("AEZEIT"), "00:00:00");
+        }
+    }
+
     //факт предыдущего дня
-    f.setFileName(pathfileprevious);
-    if(QFile::exists(pathfileprevious)) {
+    f.setFileName(*pathfileprevious);
+    if(QFile::exists(*pathfileprevious)) {
         if(!f.open(QIODevice::ReadOnly | QIODevice::Text)) {
             qDebug() << "Error read file pathfileprevious";
             return false;
@@ -502,6 +555,61 @@ bool MainWindow::loadFileFact(const QString &pathfile, const QString &pathfilepr
                 QStringList strlist;
                 strlist = str.split('\t');
                 rowListFactPrevous.push_back(strlist);
+            }
+        }
+        f.close();
+    }
+
+    //Корректировка пустых значений времени
+    for(int i = 1; i < rowListFactPrevous.length(); i++) {
+        //Фактичекое время начала
+        if(rowListFactPrevous[i].at(rowListFactPrevous[0].indexOf("GSUZP")).isEmpty()) {
+            rowListFactPrevous[i].replace(rowListFactPrevous[0].indexOf("GSUZP"), "00:00:00");
+        }
+        //Фактическое время конца
+        if(rowListFactPrevous[i].at(rowListFactPrevous[0].indexOf("GLUZP")).isEmpty()) {
+            rowListFactPrevous[i].replace(rowListFactPrevous[0].indexOf("GLUZP"), "00:00:01");
+        }
+        //Плановое время начала
+        if(rowListFactPrevous[i].at(rowListFactPrevous[0].indexOf("GSUZP")).isEmpty()) {
+            rowListFactPrevous[i].replace(rowListFactPrevous[0].indexOf("GSUZP"), "00:00:00");
+        }
+        //Фактическое время конца
+        if(rowListFactPrevous[i].at(rowListFactPrevous[0].indexOf("GLUZP")).isEmpty()) {
+            rowListFactPrevous[i].replace(rowListFactPrevous[0].indexOf("GLUZP"), "00:00:01");
+        }
+        //Время создания
+        if(rowListFactPrevous[i].at(rowListFactPrevous[0].indexOf("ERFZEIT")).isEmpty()) {
+            rowListFactPrevous[i].replace(rowListFactPrevous[0].indexOf("ERFZEIT"), "00:00:00");
+        }
+        //Время изменения
+        if(rowListFactPrevous[i].at(rowListFactPrevous[0].indexOf("AEZEIT")).isEmpty()) {
+            rowListFactPrevous[i].replace(rowListFactPrevous[0].indexOf("AEZEIT"), "00:00:00");
+        }
+    }
+
+    //факт приходов
+    f.setFileName(*pathfilesupply);
+    if(QFile::exists(*pathfilesupply)) {
+        if(!f.open(QIODevice::ReadOnly | QIODevice::Text)) {
+            qDebug() << "Error read file pathfilesupply";
+            return false;
+        }
+        QTextStream stream(&f);
+        stream.setCodec("UTF-8");
+
+        //Прочитать первую строку в мусор
+        if(!stream.atEnd()) {
+            QString str = stream.readLine();
+            str = stream.readLine();
+        }
+        //Чтение данных
+        while (!stream.atEnd()) {
+            QString str = stream.readLine();
+            if(!str.isEmpty()) {
+                QStringList strlist;
+                strlist = str.split('\t');
+                rowListFactSupply.push_back(strlist);
             }
         }
         f.close();
@@ -702,6 +810,9 @@ bool MainWindow::calculation() {
     //Загрузка нормативных отклонений
     if(!loadCriteria()) { return false; }
 
+    //Коррекция по сдвигу времени UTC
+    int timeCorrection = 60 * 60 * 2;
+
     QRegExp rxOperation("(/0020)");
 
     //Обработка данных
@@ -862,15 +973,15 @@ bool MainWindow::calculation() {
                  changedate = QDateTime::fromString(rowListFact[rFact].at(rowListFact[0].indexOf("AEDAT")) + " " + rowListFact[rFact].at(rowListFact[0].indexOf("AEZEIT")), "dd.MM.yyyy hh:mm:ss");
                  if(ORDER.isEmpty() || ORDER != rowListFact[rFact].at(rowListFact[0].indexOf("AUFNR"))) {
                     //Заказы которые созданы в день оценки
-                    if(createdate.addSecs(60 * 60 *2) >= QDateTime(selectDate)) {
+                    if(createdate.addSecs(timeCorrection) >= QDateTime(selectDate)) {
                          ORDER = rowListFact[rFact].at(rowListFact[0].indexOf("AUFNR"));
                          QStringList s;
                          //StepId
-                         s << "SAP"
+                         s << "SAP";
                          //RunId
-                         << "Вручную SAP"
+                         s << "Вручную SAP";
                          //Машина
-                         << rowListFact[rFact].at(rowListFact[0].indexOf("MDV01"));
+                         s << rowListFact[rFact].at(rowListFact[0].indexOf("MDV01"));
                          //Материал
                          s << rowListFact[rFact].at(rowListFact[0].indexOf("PLNBEZ")).right(9);
                          //Описание материала
@@ -915,15 +1026,15 @@ bool MainWindow::calculation() {
                          rowListMain.append(s);
                      }
                     //Заказы которые созданы в прошлом, но скорректированы в день оценки
-                    else if(createdate.addSecs(60 * 60 *2) <= QDateTime(selectDate) && changedate.addSecs(60 * 60 *2) >= QDateTime(selectDate)) {
+                    else if(createdate.addSecs(timeCorrection) <= QDateTime(selectDate) && changedate.addSecs(timeCorrection) >= QDateTime(selectDate)) {
                         QStringList s;
                         ORDER = rowListFact[rFact].at(rowListFact[0].indexOf("AUFNR"));
                         //StepId
-                        s << "SAP"
+                        s << "SAP";
                         //RunId
-                        << "Вручную SAP"
+                        s << "Вручную SAP";
                         //Машина
-                        << rowListFact[rFact].at(rowListFact[0].indexOf("MDV01"));
+                        s << rowListFact[rFact].at(rowListFact[0].indexOf("MDV01"));
                         //Материал
                         s << rowListFact[rFact].at(rowListFact[0].indexOf("PLNBEZ")).right(9);
                         //Описание материала
@@ -960,61 +1071,148 @@ bool MainWindow::calculation() {
                             s << dt.toString("dd.MM.yyyy hh:mm:ss");
 
                         //Проверить что изменилось в заказе относительно предыдущего снэпшота
-                        if(rowListFact[rFact].at(rowListFact[0].indexOf("ASTTX")).left(4) == "CMPL" ||
-                        rowListFact[rFact].at(rowListFact[0].indexOf("ASTTX")).left(4) == "TECO") {
-                            QString ORDER2 = "";
-                            for(int rFactPrev = 1; rFactPrev < rowListFactPrevous.length(); rFactPrev++) {
-                                if(ORDER2.isEmpty() || ORDER2 != rowListFactPrevous[rFactPrev].at(rowListFactPrevous[0].indexOf("AUFNR"))) {
-                                    ORDER2 = rowListFactPrevous[rFactPrev].at(rowListFactPrevous[0].indexOf("AUFNR"));
-                                    if(ORDER.toLongLong() == ORDER2.toLongLong()) {
+                        if(!rowListFactPrevous.isEmpty()) {
+                            if(rowListFact[rFact].at(rowListFact[0].indexOf("ASTTX")).left(4) == "CMPL" ||
+                            rowListFact[rFact].at(rowListFact[0].indexOf("ASTTX")).left(4) == "TECO") {
+                                QString ORDER2 = "";
+                                for(int rFactPrev = 1; rFactPrev < rowListFactPrevous.length(); rFactPrev++) {
+                                    if(ORDER2.isEmpty() || ORDER2 != rowListFactPrevous[rFactPrev].at(rowListFactPrevous[0].indexOf("AUFNR"))) {
+                                        ORDER2 = rowListFactPrevous[rFactPrev].at(rowListFactPrevous[0].indexOf("AUFNR"));
+                                        if(ORDER.toLongLong() == ORDER2.toLongLong()) {
 
-                                        //PRO Кол-во
-                                        float Qty = rowListFact[rFact].at(rowListFact[0].indexOf("GAMNG_KG")).toFloat();
-                                        float QtyPrev = rowListFactPrevous[rFactPrev].at(rowListFactPrevous[0].indexOf("GAMNG_KG")).toFloat();
-                                        s << QString::number(QtyPrev);
+                                            //PRO Кол-во
+                                            float Qty = rowListFact[rFact].at(rowListFact[0].indexOf("GAMNG_KG")).toFloat();
+                                            float QtyPrev = rowListFactPrevous[rFactPrev].at(rowListFactPrevous[0].indexOf("GAMNG_KG")).toFloat();
+                                            s << QString::number(QtyPrev);
 
-                                        //Поставка
-                                        Qty = rowListFact[rFact].at(rowListFact[0].indexOf("GWEMG_KG")).toFloat();
-                                        QtyPrev = rowListFactPrevous[rFactPrev].at(rowListFactPrevous[0].indexOf("GWEMG_KG")).toFloat();
-                                        //Внести маркер
-                                        if((Qty - QtyPrev) != 0) {
-                                            s << QString::number(Qty);
-                                            //Маркер для сигнала, что заказ был изменен
-                                            s[ColumnHeader.indexOf("Marker")].append("?");
+                                            //Поставка
+                                            Qty = rowListFact[rFact].at(rowListFact[0].indexOf("GWEMG_KG")).toFloat();
+                                            QtyPrev = rowListFactPrevous[rFactPrev].at(rowListFactPrevous[0].indexOf("GWEMG_KG")).toFloat();
+                                            //Внести маркер
+                                            if((Qty - QtyPrev) != 0) {
+                                                s << QString::number(Qty);
+                                                //Маркер для сигнала, что заказ был изменен
+                                                s[ColumnHeader.indexOf("Marker")].append("?");
+                                            }
+                                            else {
+                                                s << "0";
+                                                //Маркер для сигнала, что заказ не был изменен
+                                                s[ColumnHeader.indexOf("Marker")].append("!");
+                                            }
+                                            break;
                                         }
-                                        else {
-                                            s << "0";
-                                            //Маркер для сигнала, что заказ не был изменен
-                                            s[ColumnHeader.indexOf("Marker")].append("!");
+                                    }
+                                }
+                            }
+                            else {
+                                QString ORDER2 = "";
+                                for(int rFactPrev = 1; rFactPrev < rowListFactPrevous.length(); rFactPrev++) {
+                                    if(ORDER2.isEmpty() || ORDER2 != rowListFactPrevous[rFactPrev].at(rowListFactPrevous[0].indexOf("AUFNR"))) {
+                                        ORDER2 = rowListFactPrevous[rFactPrev].at(rowListFactPrevous[0].indexOf("AUFNR"));
+                                        if(ORDER.toLongLong() == ORDER2.toLongLong()) {
+
+                                            float Qty = rowListFact[rFact].at(rowListFact[0].indexOf("GAMNG_KG")).toFloat();
+                                            float QtyPrev = rowListFactPrevous[rFactPrev].at(rowListFactPrevous[0].indexOf("GAMNG_KG")).toFloat();
+                                            //PRO Кол-во
+                                            s << QString::number(Qty - QtyPrev);
+
+                                            //Поставка
+                                            Qty = rowListFact[rFact].at(rowListFact[0].indexOf("GWEMG_KG")).toFloat();
+                                            QtyPrev = rowListFactPrevous[rFactPrev].at(rowListFactPrevous[0].indexOf("GWEMG_KG")).toFloat();
+                                            s << QString::number(Qty - QtyPrev);
+                                            break;
                                         }
-                                        break;
                                     }
                                 }
                             }
                         }
                         else {
-                            QString ORDER2 = "";
-                            for(int rFactPrev = 1; rFactPrev < rowListFactPrevous.length(); rFactPrev++) {
-                                if(ORDER2.isEmpty() || ORDER2 != rowListFactPrevous[rFactPrev].at(rowListFactPrevous[0].indexOf("AUFNR"))) {
-                                    ORDER2 = rowListFactPrevous[rFactPrev].at(rowListFactPrevous[0].indexOf("AUFNR"));
-                                    if(ORDER.toLongLong() == ORDER2.toLongLong()) {
-
-                                        float Qty = rowListFact[rFact].at(rowListFact[0].indexOf("GAMNG_KG")).toFloat();
-                                        float QtyPrev = rowListFactPrevous[rFactPrev].at(rowListFactPrevous[0].indexOf("GAMNG_KG")).toFloat();
-                                        //PRO Кол-во
-                                        s << QString::number(Qty - QtyPrev);
-
-                                        //Поставка
-                                        Qty = rowListFact[rFact].at(rowListFact[0].indexOf("GWEMG_KG")).toFloat();
-                                        QtyPrev = rowListFactPrevous[rFactPrev].at(rowListFactPrevous[0].indexOf("GWEMG_KG")).toFloat();
-                                        s << QString::number(Qty - QtyPrev);
-                                        break;
-                                    }
-                                }
-                            }
+                            //PRO Кол-во
+                            s << "0";
+                            //Поставка
+                            s << "0";
                         }
                         rowListMain.append(s);
                     }
+                 }
+             }
+             //Если Плановый был удален
+             else {
+                 if(ORDER.isEmpty() || ORDER != QString::number(rowListFact[rFact].at(rowListFact[0].indexOf("AUFNR")).toLongLong())) {
+                    ORDER = QString::number(rowListFact[rFact].at(rowListFact[0].indexOf("AUFNR")).toLongLong());
+                    QString PLOORDER = QString::number(rowListFact[rFact].at(rowListFact[0].indexOf("PLNUM")).toLongLong());
+                    if(rowListFact[rFact].at(rowListFact[0].indexOf("AUFNR")) == "010011515970")
+                        qDebug() << "";
+                    QDateTime createdate;
+                    QDateTime changedate;
+                    createdate = QDateTime::fromString(rowListFact[rFact].at(rowListFact[0].indexOf("ERDAT")) + " " + rowListFact[rFact].at(rowListFact[0].indexOf("ERFZEIT")), "dd.MM.yyyy hh:mm:ss");
+                    changedate = QDateTime::fromString(rowListFact[rFact].at(rowListFact[0].indexOf("AEDAT")) + " " + rowListFact[rFact].at(rowListFact[0].indexOf("AEZEIT")), "dd.MM.yyyy hh:mm:ss");
+                    for(int rMain = 0; rMain < rowListMain.length(); rMain++) {
+                        if(rMain == rowListMain.length()-1)
+                            qDebug() << "";
+                        int Pos = rowListMain[rMain].at(ColumnHeader.indexOf("OrderPlan")).indexOf("/");
+                        if(Pos != -1) {
+                            if(PLOORDER == rowListMain[rMain].at(ColumnHeader.indexOf("OrderPlan")).mid(Pos+1)) {
+                                break;
+                            }
+                        }
+                        else if(rMain == rowListMain.length()-1) {
+                            //Заказы которые созданы в день оценки
+                            if(createdate.addSecs(timeCorrection) >= QDateTime(selectDate)) {
+                                 //qDebug() << "3" << PLOORDER << ORDER;
+                                 QStringList s;
+                                 //StepId
+                                 s << "";
+                                 //RunId
+                                 s << "";
+                                 //Машина
+                                 s << rowListFact[rFact].at(rowListFact[0].indexOf("MDV01"));
+                                 //Материал
+                                 s << rowListFact[rFact].at(rowListFact[0].indexOf("PLNBEZ")).right(9);
+                                 //Описание материала
+                                 s << rowListFact[rFact].at(rowListFact[0].indexOf("MATXT"));
+                                 //Маркер
+                                 s << "";
+                                 //Версия
+                                 s << rowListFact[rFact].at(rowListFact[0].indexOf("VERID"));
+                                 //Операция
+                                 s << "";
+                                 //PLO номер
+                                 s << "DEL: " + PLOORDER;
+                                 //PLO Начало
+                                 s << "";
+                                 //PLO Конец
+                                 s << "";
+                                 //PLO Кол-во
+                                 s << "";
+                                 //PRO номер
+                                 s << QString::number(ORDER.toLongLong());
+                                 // Статус
+                                 s << rowListFact[rFact].at(rowListFact[0].indexOf("ASTTX")).left(4);
+                                 //Дата Время начала
+                                 QDateTime dt;
+                                 dt = QDateTime::fromString(rowListFact[rFact].at(rowListFact[0].indexOf("GSTRP")) + " " + rowListFact[rFact].at(rowListFact[0].indexOf("GSUZP")), "dd.MM.yyyy hh:mm:ss");
+                                 if(!dt.isValid()) dt = QDateTime::fromString(rowListFact[rFact].at(rowListFact[0].indexOf("GSTRP")) + " 00:00:00", "dd.MM.yyyy hh:mm:ss");
+                                     s << dt.toString("dd.MM.yyyy hh:mm:ss");
+                                 //Дата Время окончания
+                                 dt = QDateTime::fromString(rowListFact[rFact].at(rowListFact[0].indexOf("GLTRP")) + " " + rowListFact[rFact].at(rowListFact[0].indexOf("GLUZP")), "dd.MM.yyyy hh:mm:ss");
+                                 if(!dt.isValid()) dt = QDateTime::fromString(rowListFact[rFact].at(rowListFact[0].indexOf("GLTRP")) + " 00:00:00", "dd.MM.yyyy hh:mm:ss");
+                                     s << dt.toString("dd.MM.yyyy hh:mm:ss");
+
+                                 //PRO Кол-во
+                                 float Qty;
+                                 Qty = rowListFact[rFact].at(rowListFact[0].indexOf("GAMNG_KG")).toFloat();
+                                 s << QString::number(Qty);
+
+                                 //Выпуск
+                                 Qty = rowListFact[rFact].at(rowListFact[0].indexOf("GWEMG_KG")).toFloat();
+                                 s << QString::number(Qty);
+
+                                 rowListMain.append(s);
+                                 break;
+                             }
+                         }
+                     }
                  }
              }
          }
@@ -1081,6 +1279,7 @@ bool MainWindow::calculation() {
                     if(isComponent(&cat, &type, &material, &plant)) {
                         SumQty += rowListProductFlow[rFlow].at(rowListProductFlow[0].indexOf("Quantity")).toFloat();
                     }
+
                 }
             }
             if(rFlow == rowListProductFlow.length()-1) {
@@ -1153,7 +1352,23 @@ bool MainWindow::calculation() {
                     }
                 }
                 if(rFact == rowListFact.length()-1) {
-                    rowListMain[rMain] << QString::number(SumQtyIn + QtyOut);
+                    //Для заказов без корректировки
+                    if(rowListMain[rMain].at(ColumnHeader.indexOf("Marker")).indexOf("?") == -1) {
+                        rowListMain[rMain] << QString::number(SumQtyIn + QtyOut);
+                    }
+                    //Для скорректированных закрытых заказов
+                    else {
+                        float Qty1 = rowListMain[rMain].at(ColumnHeader.indexOf("QuantityFact")).toFloat();
+                        float Qty2 = rowListMain[rMain].at(ColumnHeader.indexOf("DeliveryFact")).toFloat();
+                        if(Qty1 > Qty2) {
+                            float Proc = 100 - (Qty2 * 100 / Qty1);
+                            rowListMain[rMain] << QString::number(-1*(SumQtyIn + QtyOut) * Proc / 100);
+                        }
+                        else {
+                            float Proc = 100 - (Qty1 * 100 / Qty2);
+                            rowListMain[rMain] << QString::number(-1*(SumQtyIn + QtyOut) * Proc / 100);
+                        }
+                    }
                 }
             }
         }
@@ -1235,11 +1450,11 @@ bool MainWindow::calculation() {
                         float Qty2 = rowListMain[rMain].at(ColumnHeader.indexOf("DeliveryFact")).toFloat();
                         if(Qty1 > Qty2) {
                             float Proc = 100 - (Qty2 * 100 / Qty1);
-                            rowListMain[rMain] << QString::number((SumQtyIn + QtyOut) * Proc / 100);
+                            rowListMain[rMain] << QString::number(-1*(SumQtyIn + QtyOut) * Proc / 100);
                         }
                         else {
                             float Proc = 100 - (Qty1 * 100 / Qty2);
-                            rowListMain[rMain] << QString::number((SumQtyIn + QtyOut) * Proc / 100);
+                            rowListMain[rMain] << QString::number(-1*(SumQtyIn + QtyOut) * Proc / 100);
                         }
                     }
                 }
@@ -1313,7 +1528,23 @@ bool MainWindow::calculation() {
                     }
                 }
                 if(rFact == rowListFact.length()-1) {
-                    rowListMain[rMain] << QString::number(SumQtyIn + QtyOut);
+                    //Для заказов без корректировки
+                    if(rowListMain[rMain].at(ColumnHeader.indexOf("Marker")).indexOf("?") == -1) {
+                        rowListMain[rMain] << QString::number(SumQtyIn + QtyOut);
+                    }
+                    //Для скорректированных закрытых заказов
+                    else {
+                        float Qty1 = rowListMain[rMain].at(ColumnHeader.indexOf("QuantityFact")).toFloat();
+                        float Qty2 = rowListMain[rMain].at(ColumnHeader.indexOf("DeliveryFact")).toFloat();
+                        if(Qty1 > Qty2) {
+                            float Proc = 100 - (Qty2 * 100 / Qty1);
+                            rowListMain[rMain] << QString::number(-1*(SumQtyIn + QtyOut) * Proc / 100);
+                        }
+                        else {
+                            float Proc = 100 - (Qty1 * 100 / Qty2);
+                            rowListMain[rMain] << QString::number(-1*(SumQtyIn + QtyOut) * Proc / 100);
+                        }
+                    }
                 }
             }
         }
@@ -1323,7 +1554,7 @@ bool MainWindow::calculation() {
     }
 
 
-    //Поставки молока
+    //План прихода молока
     //Добавить пустую запись
     QStringList lstr;
     for(int i = 0; i < rowListMain[0].length(); i++) {
@@ -1367,7 +1598,7 @@ bool MainWindow::calculation() {
     rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("QuantityPlan")] = QString::number(Qty);
     rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("MilkReqPlan")] = QString::number(Qty);
 
-    //Поставки обрата
+    //План прихода обрата
     //Добавить пустую запись
     rowListMain.append(lstr);
 
@@ -1402,7 +1633,7 @@ bool MainWindow::calculation() {
     rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("SkMilkReqPlan")] = QString::number(Qty);
 
 
-    //Поставки сливок
+    //План прихода сливок
     //Добавить пустую запись
     rowListMain.append(lstr);
 
@@ -1435,6 +1666,78 @@ bool MainWindow::calculation() {
     rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("OrderPlan")] = "ПРИВОЗ";
     rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("QuantityPlan")] = QString::number(Qty);
     rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("CreamReqPlan")] = QString::number(Qty);
+
+
+    //Факт прихода молока
+    //Добавить пустую запись
+    rowListMain.append(lstr);
+
+    //Обнулить цифровые значения в строке
+    foreach(QString c, strlist) {
+        rowListMain[rowListMain.length()-1][ColumnHeader.indexOf(c)] = "0";
+    }
+
+    Qty = 0.0;
+    for(int r = 1; r < rowListFactSupply.length(); r++) {
+        const QString cat = "fact";
+        const QString type = "milk";
+        const QString mat = QString::number(rowListFactSupply[r].at(rowListFactSupply[0].indexOf("MATNR")).toLong());
+        if(isComponent(&cat, &type, &mat, &selectPlant)) {
+            if(rowListFactSupply[r].at(rowListFactSupply[0].indexOf("BWART")) == "105" ||
+            rowListFactSupply[r].at(rowListFactSupply[0].indexOf("BWART")) == "641") {
+                if(rowListFactSupply[r].at(rowListFactSupply[0].indexOf("WERKS")) == selectPlant) {
+                    QDate dt;
+                    dt = QDate::fromString(rowListFactSupply[r].at(rowListFactSupply[0].indexOf("BUDAT")), "dd.MM.yyyy");
+                    if(dt == selectDate) {
+                        Qty += rowListFactSupply[r].at(rowListFactSupply[0].indexOf("ERFMG")).toFloat();
+                    }
+                }
+            }
+        }
+    }
+    rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("ProductLocationId")] = "Молоко";
+    rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("StartFact")] = selectDate.toString("dd.MM.yyyy 00:00:00");
+    rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("EndFact")] = selectDate.toString("dd.MM.yyyy 23:59:59");
+    rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("Description")] = "Привоз Молока";
+    rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("OrderFact")] = "ПРИВОЗ";
+    rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("QuantityFact")] = QString::number(Qty);
+    rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("MilkReqFact")] = QString::number(Qty);
+
+
+    //Факт прихода обрата
+    //Добавить пустую запись
+    rowListMain.append(lstr);
+
+    //Обнулить цифровые значения в строке
+    foreach(QString c, strlist) {
+        rowListMain[rowListMain.length()-1][ColumnHeader.indexOf(c)] = "0";
+    }
+    Qty = 0.0;
+    for(int r = 1; r < rowListFactSupply.length(); r++) {
+        const QString cat = "fact";
+        const QString type = "skmilk";
+        const QString mat = QString::number(rowListFactSupply[r].at(rowListFactSupply[0].indexOf("MATNR")).toLong());
+        if(isComponent(&cat, &type, &mat, &selectPlant)) {
+            if(rowListFactSupply[r].at(rowListFactSupply[0].indexOf("BWART")) == "105" ||
+            rowListFactSupply[r].at(rowListFactSupply[0].indexOf("BWART")) == "641") {
+                if(rowListFactSupply[r].at(rowListFactSupply[0].indexOf("WERKS")) == selectPlant) {
+                    QDate dt;
+                    dt = QDate::fromString(rowListFactSupply[r].at(rowListFactSupply[0].indexOf("BUDAT")), "dd.MM.yyyy");
+                    if(dt == selectDate) {
+                        Qty += rowListFactSupply[r].at(rowListFactSupply[0].indexOf("ERFMG")).toFloat();
+                    }
+                }
+            }
+        }
+    }
+    rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("ProductLocationId")] = "Обезж.молоко";
+    rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("StartFact")] = selectDate.toString("dd.MM.yyyy 00:00:00");
+    rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("EndFact")] = selectDate.toString("dd.MM.yyyy 23:59:59");
+    rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("Description")] = "Привоз Обезж.молока";
+    rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("OrderFact")] = "ПРИВОЗ";
+    rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("QuantityFact")] = QString::number(Qty);
+    rowListMain[rowListMain.length()-1][ColumnHeader.indexOf("SkMilkReqFact")] = QString::number(Qty);
+
 
     //Фильтр по молочным компонентам
     for(int rMain = 0; rMain < rowListMain.length(); rMain++) {
@@ -2077,6 +2380,7 @@ void MainWindow::slicetime() {
         }
     }
 }
+
 
 void MainWindow::on_action_Exit_triggered()
 {

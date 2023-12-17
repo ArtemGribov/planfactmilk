@@ -26,7 +26,9 @@ public:
     bool calculation();
     QString findSourceFile(const QString &sourceserver);
     bool findFileFact();
-    bool loadFileFact(const QString &pathfile, const QString &pathfileprevious);
+    bool loadFileFact(const QString *pathfile,
+                      const QString *pathfileprevious,
+                      const QString *pathfilesupply);
     virtual void timerEvent(QTimerEvent*);
     virtual void resizeEvent(QResizeEvent*);
     QString findDirFact(const QDir &dir);
@@ -70,11 +72,14 @@ private:
     QString pathFact;
     QString fileFact;
     QString fileFactPrevious;
+    QString fileFactSupply;
     QString pathFactFile;
     QString pathFactFilePrevious;
+    QString pathFactFileSupply;
     int timerId;
     QString namefileplanmask;
     QString internalpathdirfact;
+    QString internalpathdirsupply;
     QStringList admin;
     QStringList user;
 
@@ -96,5 +101,6 @@ public:
     QList<QStringList> rowListStock;
     QList<QStringList> rowListFact;
     QList<QStringList> rowListFactPrevous;
+    QList<QStringList> rowListFactSupply;
 };
 #endif // MAINWINDOW_H
