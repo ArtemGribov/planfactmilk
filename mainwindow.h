@@ -19,6 +19,7 @@ public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
     QString version;
+    void activategui(bool stat);
     void startUnpack(const QString &pathprogram,
                     const QString &pathdirplan,
                     const QString &pathdestiny);
@@ -57,35 +58,6 @@ private slots:
 
 private:
     Ui::MainWindow *ui;
-    enum Column {
-        StepId,
-        RunId,
-        MachineId,
-        ProductLocationId,
-        Description,
-        Marker,
-        Version,
-        OperationId,
-        OrderPlan,
-        StartPlan,
-        EndPlan,
-        QuantityPlan,
-        OrderFact,
-        Status,
-        StartFact,
-        EndFact,
-        QuantityFact,
-        DeliveryFact,
-        MilkReqPlan,
-        SkMilkReqPlan,
-        CreamReqPlan,
-        MilkReqFact,
-        SkMilkReqFact,
-        CreamReqFact,
-        MilkDelta,
-        SkMilkDelta,
-        CreamDelta
-    };
     QDate selectDate;
     QString selectPlant;
     float MilkCriteria;
@@ -129,10 +101,39 @@ private:
     QList<QStringList> rowListFact;
     QList<QStringList> rowListFactPrevous;
     QList<QStringList> rowListFactSupply;
-    QList<QStringList> rowListMain;
+
 
 public:
+    enum Column {
+        StepId,
+        RunId,
+        MachineId,
+        ProductLocationId,
+        Description,
+        Marker,
+        Version,
+        OperationId,
+        OrderPlan,
+        StartPlan,
+        EndPlan,
+        QuantityPlan,
+        OrderFact,
+        Status,
+        StartFact,
+        EndFact,
+        QuantityFact,
+        DeliveryFact,
+        MilkReqPlan,
+        SkMilkReqPlan,
+        CreamReqPlan,
+        MilkReqFact,
+        SkMilkReqFact,
+        CreamReqFact,
+        MilkDelta,
+        SkMilkDelta,
+        CreamDelta
+    };
 
-
+    QList<QStringList> rowListMain;
 };
 #endif // MAINWINDOW_H

@@ -52,38 +52,38 @@ QVariant TableModelMain::data(const QModelIndex &index, int role) const
     if(role == Qt::BackgroundColorRole)
     {
         //Для заказов которые были скорректированы
-        if(checkQuestion(rowList[index.row()][Marker]) == "?") {
-            if((index.column() == QuantityFact) ||
-            (index.column() == DeliveryFact) ||
-            (index.column() == MilkReqFact) ||
-            (index.column() == SkMilkReqFact) ||
-            (index.column() == CreamReqFact) ||
-            (index.column() == MilkDelta) ||
-            (index.column() == SkMilkDelta) ||
-            (index.column() == CreamDelta)) {
+        if(checkQuestion(rowList[index.row()][MainWindow::Column::Marker]) == "?") {
+            if((index.column() == MainWindow::Column::QuantityFact) ||
+            (index.column() == MainWindow::Column::DeliveryFact) ||
+            (index.column() == MainWindow::Column::MilkReqFact) ||
+            (index.column() == MainWindow::Column::SkMilkReqFact) ||
+            (index.column() == MainWindow::Column::CreamReqFact) ||
+            (index.column() == MainWindow::Column::MilkDelta) ||
+            (index.column() == MainWindow::Column::SkMilkDelta) ||
+            (index.column() == MainWindow::Column::CreamDelta)) {
                 return QColor(250,200,250);
             }
         }
 
         //для общего итога
         if(index.row() == rowList.length()-1) {
-            if(index.column() == MilkDelta) {
-                int pos = rowList[index.row()][MilkDelta].indexOf("т.");
-                if(abs(rowList[index.row()][MilkDelta].left(pos).toFloat()) > *MilkCriteria)
+            if(index.column() == MainWindow::Column::MilkDelta) {
+                int pos = rowList[index.row()][MainWindow::Column::MilkDelta].indexOf("т.");
+                if(abs(rowList[index.row()][MainWindow::Column::MilkDelta].left(pos).toFloat()) > *MilkCriteria)
                     return QColor(255,150,150);
                 else
                     return QColor(Qt::green);
             }
-            else if(index.column() == SkMilkDelta) {
-                int pos = rowList[index.row()][SkMilkDelta].indexOf("т.");
-                if(abs(rowList[index.row()][SkMilkDelta].left(pos).toFloat()) > *SkMilkCriteria)
+            else if(index.column() == MainWindow::Column::SkMilkDelta) {
+                int pos = rowList[index.row()][MainWindow::Column::SkMilkDelta].indexOf("т.");
+                if(abs(rowList[index.row()][MainWindow::Column::SkMilkDelta].left(pos).toFloat()) > *SkMilkCriteria)
                     return QColor(255,150, 150);
                 else
                     return QColor(Qt::green);
             }
-            else if(index.column() == CreamDelta) {
-                int pos = rowList[index.row()][CreamDelta].indexOf("т.");
-                if(abs(rowList[index.row()][CreamDelta].left(pos).toFloat()) > *CreamCriteria)
+            else if(index.column() == MainWindow::Column::CreamDelta) {
+                int pos = rowList[index.row()][MainWindow::Column::CreamDelta].indexOf("т.");
+                if(abs(rowList[index.row()][MainWindow::Column::CreamDelta].left(pos).toFloat()) > *CreamCriteria)
                     return QColor(255,150,150);
                 else
                     return QColor(Qt::green);
@@ -97,75 +97,75 @@ QVariant TableModelMain::data(const QModelIndex &index, int role) const
         }
 
         //для промежуточных итогов
-        if(index.row() != rowList.length()-1 && rowList[index.row()][ProductLocationId].isEmpty())
+        if(index.row() != rowList.length()-1 && rowList[index.row()][MainWindow::Column::ProductLocationId].isEmpty())
             return QColor(225,225,225);
 
 
         //для статуса INTL
-        if(rowList[index.row()][Status] == "INTL" || rowList[index.row()][Status] == "UNTE") {
-            QDateTime start = QDateTime::fromString(rowList[index.row()][StartFact], "dd.MM.yyyy hh:mm:ss");
-            QDateTime end = QDateTime::fromString(rowList[index.row()][EndFact], "dd.MM.yyyy hh:mm:ss");
-            if(rowList[index.row()][OrderPlan].isEmpty()) {
-                if((index.column() == MilkReqFact)) {
+        if(rowList[index.row()][MainWindow::Column::Status] == "INTL" || rowList[index.row()][MainWindow::Column::Status] == "UNTE") {
+            QDateTime start = QDateTime::fromString(rowList[index.row()][MainWindow::Column::StartFact], "dd.MM.yyyy hh:mm:ss");
+            QDateTime end = QDateTime::fromString(rowList[index.row()][MainWindow::Column::EndFact], "dd.MM.yyyy hh:mm:ss");
+            if(rowList[index.row()][MainWindow::Column::OrderPlan].isEmpty()) {
+                if((index.column() == MainWindow::Column::MilkReqFact)) {
                     return QColor(250,200,250);
                 }
-                if((index.column() == MilkReqFact) ||
-                (index.column() == SkMilkReqFact) ||
-                (index.column() == CreamReqFact) ||
-                (index.column() == MilkDelta) ||
-                (index.column() == SkMilkDelta) ||
-                (index.column() == CreamDelta)) {
+                if((index.column() == MainWindow::Column::MilkReqFact) ||
+                (index.column() == MainWindow::Column::SkMilkReqFact) ||
+                (index.column() == MainWindow::Column::CreamReqFact) ||
+                (index.column() == MainWindow::Column::MilkDelta) ||
+                (index.column() == MainWindow::Column::SkMilkDelta) ||
+                (index.column() == MainWindow::Column::CreamDelta)) {
                     return QColor(250,200,250);
                 }
             }
             if((start < QDateTime(CheckDate->addDays(1)) && end > QDateTime(CheckDate->addDays(1))) ||
             start >= QDateTime(CheckDate->addDays(1))) {
-                if((index.column() == MilkReqFact) && rowList[index.row()][MilkReqFact].toFloat() != 0) {
+                if((index.column() == MainWindow::Column::MilkReqFact) && rowList[index.row()][MainWindow::Column::MilkReqFact].toFloat() != 0) {
                     return QColor(250,200,250);
                 }
-                if((index.column() == SkMilkReqFact) && rowList[index.row()][SkMilkReqFact].toFloat() != 0) {
+                if((index.column() == MainWindow::Column::SkMilkReqFact) && rowList[index.row()][MainWindow::Column::SkMilkReqFact].toFloat() != 0) {
                     return QColor(250,200,250);
                 }
-                if((index.column() == CreamReqFact) && rowList[index.row()][CreamReqFact].toFloat() != 0) {
+                if((index.column() == MainWindow::Column::CreamReqFact) && rowList[index.row()][MainWindow::Column::CreamReqFact].toFloat() != 0) {
                     return QColor(250,200,250);
                 }
             }
-            if(index.column() == Status) {
+            if(index.column() == MainWindow::Column::Status) {
                 return QColor(165,180,255);
             }
         }
 
-        if((index.column() == MilkReqPlan) && rowList[index.row()][MilkReqPlan].toFloat() != 0) {
+        if((index.column() == MainWindow::Column::MilkReqPlan) && rowList[index.row()][MainWindow::Column::MilkReqPlan].toFloat() != 0) {
             return QColor(110,180,255);
         }
-        if((index.column() == SkMilkReqPlan) && rowList[index.row()][SkMilkReqPlan].toFloat() != 0) {
+        if((index.column() == MainWindow::Column::SkMilkReqPlan) && rowList[index.row()][MainWindow::Column::SkMilkReqPlan].toFloat() != 0) {
             return QColor(200,250,255);
         }
-        if((index.column() == CreamReqPlan) && rowList[index.row()][CreamReqPlan].toFloat() != 0) {
+        if((index.column() == MainWindow::Column::CreamReqPlan) && rowList[index.row()][MainWindow::Column::CreamReqPlan].toFloat() != 0) {
             return QColor(255,255,200);
         }
-        if((index.column() == MilkReqFact) && rowList[index.row()][MilkReqFact].toFloat() != 0) {
+        if((index.column() == MainWindow::Column::MilkReqFact) && rowList[index.row()][MainWindow::Column::MilkReqFact].toFloat() != 0) {
             return QColor(110,180,255);
         }
-        if((index.column() == SkMilkReqFact) && rowList[index.row()][SkMilkReqFact].toFloat() != 0) {
+        if((index.column() == MainWindow::Column::SkMilkReqFact) && rowList[index.row()][MainWindow::Column::SkMilkReqFact].toFloat() != 0) {
             return QColor(200,250,255);
         }
-        if((index.column() == CreamReqFact) && rowList[index.row()][CreamReqFact].toFloat() != 0) {
+        if((index.column() == MainWindow::Column::CreamReqFact) && rowList[index.row()][MainWindow::Column::CreamReqFact].toFloat() != 0) {
             return QColor(255,255,200);
         }
-        if((index.column() == MilkDelta) && rowList[index.row()][MilkDelta].toFloat() != 0) {
+        if((index.column() == MainWindow::Column::MilkDelta) && rowList[index.row()][MainWindow::Column::MilkDelta].toFloat() != 0) {
             return QColor(110,180,255);
         }
-        if((index.column() == SkMilkDelta) && rowList[index.row()][SkMilkDelta].toFloat() != 0) {
+        if((index.column() == MainWindow::Column::SkMilkDelta) && rowList[index.row()][MainWindow::Column::SkMilkDelta].toFloat() != 0) {
             return QColor(200,250,255);
         }
-        if((index.column() == CreamDelta) && rowList[index.row()][CreamDelta].toFloat() != 0) {
+        if((index.column() == MainWindow::Column::CreamDelta) && rowList[index.row()][MainWindow::Column::CreamDelta].toFloat() != 0) {
             return QColor(255,255,200);
         }
     }
     //Шрифт
     if(role == Qt::FontRole) {
-        if(index.row() != rowList.length()-1 && rowList[index.row()][ProductLocationId].isEmpty()) {
+        if(index.row() != rowList.length()-1 && rowList[index.row()][MainWindow::Column::ProductLocationId].isEmpty()) {
             QFont font = QFont("Helvetica", 10, QFont::Bold);
             return QVariant(font);
         }
@@ -211,33 +211,33 @@ QVariant TableModelMain::headerData(int section, Qt::Orientation orientation,
     }
     //return rowList[0][section];
     switch(section) {
-    case StepId: return "StepId";
-    case RunId: return "RunId";
-    case MachineId: return "Машина";
-    case ProductLocationId: return "Код";
-    case Description: return "Описание";
-    case Marker: return "Маркер";
-    case Version: return "Версия";
-    case OperationId: return "Операция";
-    case OrderPlan: return "Номер план";
-    case StartPlan: return "Начало план";
-    case EndPlan: return "Конец план";
-    case QuantityPlan: return "Кол-во план";
-    case OrderFact: return "Номер факт";
-    case Status: return "Статус";
-    case StartFact: return "Начало факт";
-    case EndFact: return "Конец факт";
-    case QuantityFact: return "Кол-во факт";
-    case DeliveryFact: return "Выпуск факт";
-    case MilkReqPlan: return "МОЛ.план";
-    case SkMilkReqPlan: return "ОБР.план";
-    case CreamReqPlan: return "СЛ.план";
-    case MilkReqFact: return "МОЛ.факт";
-    case SkMilkReqFact: return "ОБР.факт";
-    case CreamReqFact: return "СЛ.факт";
-    case MilkDelta: return "ЗАПАС.МОЛ";
-    case SkMilkDelta: return "ЗАПАС.ОБР";
-    case CreamDelta: return "ЗАПАС.СЛ";
+    case MainWindow::Column::StepId: return "StepId";
+    case MainWindow::Column::RunId: return "RunId";
+    case MainWindow::Column::MachineId: return "Машина";
+    case MainWindow::Column::ProductLocationId: return "Код";
+    case MainWindow::Column::Description: return "Описание";
+    case MainWindow::Column::Marker: return "Маркер";
+    case MainWindow::Column::Version: return "Версия";
+    case MainWindow::Column::OperationId: return "Операция";
+    case MainWindow::Column::OrderPlan: return "Номер план";
+    case MainWindow::Column::StartPlan: return "Начало план";
+    case MainWindow::Column::EndPlan: return "Конец план";
+    case MainWindow::Column::QuantityPlan: return "Кол-во план";
+    case MainWindow::Column::OrderFact: return "Номер факт";
+    case MainWindow::Column::Status: return "Статус";
+    case MainWindow::Column::StartFact: return "Начало факт";
+    case MainWindow::Column::EndFact: return "Конец факт";
+    case MainWindow::Column::QuantityFact: return "Кол-во факт";
+    case MainWindow::Column::DeliveryFact: return "Выпуск факт";
+    case MainWindow::Column::MilkReqPlan: return "МОЛ.план";
+    case MainWindow::Column::SkMilkReqPlan: return "ОБР.план";
+    case MainWindow::Column::CreamReqPlan: return "СЛ.план";
+    case MainWindow::Column::MilkReqFact: return "МОЛ.факт";
+    case MainWindow::Column::SkMilkReqFact: return "ОБР.факт";
+    case MainWindow::Column::CreamReqFact: return "СЛ.факт";
+    case MainWindow::Column::MilkDelta: return "ЗАПАС.МОЛ";
+    case MainWindow::Column::SkMilkDelta: return "ЗАПАС.ОБР";
+    case MainWindow::Column::CreamDelta: return "ЗАПАС.СЛ";
     }
 
     return QVariant();

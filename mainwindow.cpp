@@ -16,7 +16,7 @@ MainWindow::MainWindow(QWidget *parent)
     ui->setupUi(this);
 
     //Версия
-    version = "2.4.2";
+    version = "2.4.3";
 
     //Дата
     ui->dateEdit->setDate(QDateTime::currentDateTime().date().addDays(-1));
@@ -51,7 +51,8 @@ bool MainWindow::on_action_FindDirectoryFact_triggered()
     foreach(QString disk, lstDisk) {
         dirFact.setPath(disk + ":/");
         //Поиск директории
-        labelstatus->setText("Поиск директории c фактическими данными. Пожалуйста, подождите...");
+        labelstatus->setText("Поиск директории c фактическими данными. "
+                             "Пожалуйста, подождите...");
         findDirFact(dirFact);
         if(!pathFact.isEmpty()) break;
     }
@@ -123,14 +124,18 @@ QString crypto(QString str) {
     return cryptostr;
 }
 
+void MainWindow::activategui(bool stat) {
+    ui->pushButtonStart->setEnabled(stat);
+    ui->dateEdit->setEnabled(stat);
+    ui->comboBoxPlant->setEnabled(stat);
+}
+
 bool MainWindow::on_pushButtonStart_clicked()
 {
     QApplication::processEvents();
 
     //Отключить активность кнопок
-    ui->pushButtonStart->setEnabled(false);
-    ui->dateEdit->setEnabled(false);
-    ui->comboBoxPlant->setEnabled(false);
+    activategui(false);
 
     //Очистка
     rowListMain.clear();
@@ -161,20 +166,24 @@ bool MainWindow::on_pushButtonStart_clicked()
     //Чтение настроек пользователя
     QString fileName = QDir::tempPath() + "/settings.cfg";
     QFile fileSetting(fileName);
-    if(QFile::exists(fileName)) {
-        if(!fileSetting.open(QIODevice::ReadOnly | QIODevice::Text)) {
-            labelstatus->setText("Не найден файл settings");
-            return false;
-        }
-        QTextStream in(&fileSetting);
-        in.setCodec("UTF-8");
-        //Чтение пути
-        pathFact = in.readAll();
-        if(pathFact.isEmpty()) {
-            QMessageBox::warning(0,"Ошибка", "Не найдена директория с фактом");
-            labelstatus->setText("Ошибка");
-            return false;
-        }
+    if(!QFile::exists(fileName)) {
+        QMessageBox::warning(0,"Ошибка", "Не найден файл settings");
+        activategui(true);
+        return false;
+    }
+    if(!fileSetting.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        QMessageBox::warning(0,"Ошибка", "Не удается открыть файл settings");
+        activategui(true);
+        return false;
+    }
+    QTextStream in(&fileSetting);
+    in.setCodec("UTF-8");
+    //Чтение пути
+    pathFact = in.readAll();
+    if(pathFact.isEmpty()) {
+        QMessageBox::warning(0,"Ошибка", "Не найдена директория с фактом");
+        activategui(true);
+        return false;
     }
     fileSetting.close();
 
@@ -186,7 +195,7 @@ bool MainWindow::on_pushButtonStart_clicked()
     if(QFile::exists(pathData)) {
         if(!f.open(QIODevice::ReadOnly | QIODevice::Text)) {
             QMessageBox::warning(0,"Ошибка", "Невозможно прочитать файл settings_app.cfg");
-            labelstatus->setText("Ошибка");
+            activategui(true);
             return false;
         }
         QTextStream stream(&f);
@@ -209,13 +218,11 @@ bool MainWindow::on_pushButtonStart_clicked()
                             if(crypto(s) == QDir::home().dirName())
                                 break;
                             else if(s == user.last()) {
-                                QMessageBox::warning(0,"Нет доступа", "Отказано в доступе. "
-                                                                      "Пожалуйста, запросите доступ у администратора");
-                                labelstatus->setText("Нет доступа");
+                                QMessageBox::warning(0,"Нет доступа",
+                                                     "Нет доступа к данным. "
+                                                     "Пожалуйста, запросите доступ у администратора");
                                 //Включить активность кнопок
-                                ui->pushButtonStart->setEnabled(true);
-                                ui->dateEdit->setEnabled(true);
-                                ui->comboBoxPlant->setEnabled(true);
+                                activategui(true);
                                 return false;
                             }
                         }
@@ -224,7 +231,11 @@ bool MainWindow::on_pushButtonStart_clicked()
                     if(strlist[0] == "timecorrection") {
                         bool ok;
                         timecorrection = 3600 * strlist[1].toInt(&ok);
-                        if(!ok) QMessageBox::warning(0,"Не корректные настройки времени", "Проверьте данные в конфигураторе");
+                        if(!ok) {
+                            QMessageBox::warning(0,"Не корректные настройки времени",
+                                                 "Проверьте данные в конфигураторе");
+                             activategui(true);
+                        }
                     }
                     //Путь к директории плана
                     if(strlist[0] == "pathdirplan") {
@@ -260,31 +271,21 @@ bool MainWindow::on_pushButtonStart_clicked()
         selectPlant = ui->comboBoxPlant->currentText();
         //Поиск файла с фактом
         if(!findFileFact()) {
-            ui->pushButtonStart->setEnabled(true);
-            ui->dateEdit->setEnabled(true);
-            ui->comboBoxPlant->setEnabled(true);
-            QMessageBox::warning(0,"Ошибка", "Ошибка поиска факта");
-            labelstatus->setText("Ошибка");
+            activategui(true);
             return false;
         }
         //Загрузка файла с фактом
         if(!loadFileFact(&pathFactFile, &pathFactFilePrevious, &pathFactFileSupply)) {
-            ui->pushButtonStart->setEnabled(true);
-            ui->dateEdit->setEnabled(true);
-            ui->comboBoxPlant->setEnabled(true);
             QMessageBox::warning(0,"Ошибка", "Ошибка загрузки факта");
-            labelstatus->setText("Ошибка");
+            activategui(true);
             return false;
         }
 
         //Поиск плановых данных
         pathfileplan = findSourceFile(pathdirplan);
         if(pathfileplan.isEmpty()) {
-            ui->pushButtonStart->setEnabled(true);
-            ui->dateEdit->setEnabled(true);
-            ui->comboBoxPlant->setEnabled(true);
             QMessageBox::warning(0,"Ошибка", "Ошибка поиска плана");
-            labelstatus->setText("Ошибка");
+            activategui(true);
             return false;
         }
 
@@ -300,95 +301,71 @@ bool MainWindow::on_pushButtonStart_clicked()
 
         destinfileplan = pathdestin + "/" + pathfileplan.right(40);
         QDir dir(pathdestin);
-        if(QDir(pathdestin).exists()) {
-            if(!pathfileplan.isEmpty() && !destinfileplan.isEmpty()) {
-                //Копируем файл исходник
-                if(QFile::exists(destinfileplan)) {
-                    QFile::remove(destinfileplan);
-                    QFile::copy(pathfileplan, destinfileplan);
-                }
-                else
-                    QFile::copy(pathfileplan, destinfileplan);
-
-                //Создать файл передачи параметров
-                QFile file(pathdestin + "_$pipeline.tmp");
-                if(QFile::exists(pathdestin + "_$pipeline.tmp")) {
-                    QFile::remove(pathdestin + "_$pipeline.tmp");
-                }
-                file.open(QIODevice::WriteOnly);
-                QTextStream out(&file);
-                out << "_%start_process";
-                file.close();
-
-                //Путь к распаковщику
-                pathprogram = QDir::currentPath() + "/unpack.exe";
-                if(!QFile::exists(pathprogram)) {
-                    labelstatus->setText("Распаковщик отсутствует. Проверьте целостность файлов.");
-                    ui->pushButtonStart->setEnabled(true);
-                    ui->dateEdit->setEnabled(true);
-                    ui->comboBoxPlant->setEnabled(true);
-                    return false;
-                }
-
-                //Запуск распаковщика
-                startUnpack(pathprogram, destinfileplan, pathdestin);
-                return true;
-            }
-            else {
-                labelstatus->setText("Ошибка. Ошибка загрузки плана");
-                ui->pushButtonStart->setEnabled(true);
-                ui->dateEdit->setEnabled(true);
-                ui->comboBoxPlant->setEnabled(true);
-                return false;
-            }
-        }
-        else {
-            labelstatus->setText("Директория для распаковки не найдена.");
-            ui->pushButtonStart->setEnabled(true);
-            ui->dateEdit->setEnabled(true);
-            ui->comboBoxPlant->setEnabled(true);
+        if(!QDir(pathdestin).exists()) {
+            QMessageBox::warning(0,"Ошибка", "Директория для распаковки не найдена.");
+            activategui(true);
             return false;
         }
+        if(pathfileplan.isEmpty() || destinfileplan.isEmpty()) {
+            QMessageBox::warning(0,"Ошибка", "Ошибка загрузки плана");
+            activategui(true);
+            return false;
+        }
+        //Копируем файл исходник
+        if(QFile::exists(destinfileplan)) {
+            QFile::remove(destinfileplan);
+            QFile::copy(pathfileplan, destinfileplan);
+        }
+        else QFile::copy(pathfileplan, destinfileplan);
+
+        //Создать файл передачи параметров
+        QFile file(pathdestin + "_$pipeline.tmp");
+        if(QFile::exists(pathdestin + "_$pipeline.tmp")) {
+            QFile::remove(pathdestin + "_$pipeline.tmp");
+        }
+        file.open(QIODevice::WriteOnly);
+        QTextStream out(&file);
+        out << "_%start_process";
+        file.close();
+
+        //Путь к распаковщику
+        pathprogram = QDir::currentPath() + "/unpack.exe";
+        if(!QFile::exists(pathprogram)) {
+            QMessageBox::warning(0,"Ошибка", "Распаковщик отсутствует. Проверьте целостность файлов.");
+            activategui(true);
+            return false;
+        }
+
+        //Запуск распаковщика
+        startUnpack(pathprogram, destinfileplan, pathdestin);
+        return true;
     }
     else {
         selectPlant = ui->comboBoxPlant->currentText();
         //Поиск файлов с фактом
         if(!findFileFact()) {
-            ui->pushButtonStart->setEnabled(true);
-            ui->dateEdit->setEnabled(true);
-            ui->comboBoxPlant->setEnabled(true);
-            QMessageBox::warning(0,"Ошибка", "Ошибка поиска факта");
-            labelstatus->setText("Ошибка");
+            activategui(true);
             return false;
         }
         //Загрузка файлов с фактом
         if(!loadFileFact(&pathFactFile, &pathFactFilePrevious, &pathFactFileSupply)) {
-            ui->pushButtonStart->setEnabled(true);
-            ui->dateEdit->setEnabled(true);
-            ui->comboBoxPlant->setEnabled(true);
             QMessageBox::warning(0,"Ошибка", "Ошибка загрузки факта");
-            labelstatus->setText("Ошибка");
+            activategui(true);
             return false;
         }
 
         //Поиск плановых данных
         pathfileplan = findSourceFile(pathdirplan);
         if(pathfileplan.isEmpty()) {
-            ui->pushButtonStart->setEnabled(true);
-            ui->dateEdit->setEnabled(true);
-            ui->comboBoxPlant->setEnabled(true);
             QMessageBox::warning(0,"Ошибка", "Ошибка поиска плана");
-            labelstatus->setText("Ошибка");
+            activategui(true);
             return false;
         }
 
         //Выполнить расчеты
         labelstatus->setText("Анализирую данные. Пожалуйста, подождите...");
         calculation();
-        //Включить активность кнопок
-        ui->pushButtonStart->setEnabled(true);
-        ui->dateEdit->setEnabled(true);
-        ui->comboBoxPlant->setEnabled(true);
+        activategui(true);
         return true;
     }
 }
@@ -408,47 +385,43 @@ bool MainWindow::findFileFact() {
     listFiles = QDir(pathFact + "/" + internalpathdirfact + "/" + selectPlant).entryList(QStringList()
                 << internalpathdirfact + "_" + selectDate.toString("dd.MM.yyyy") + "_21_??_??.csv",
                 QDir::Files);
-    if(!listFiles.isEmpty()) {
-        fileFact = listFiles[0];
-        //Записать полный путь к файлу
-        pathFactFile = pathFact + "/" + internalpathdirfact + "/" + selectPlant + "/" + fileFact;
-    }
-    else {
-        labelstatus->setText("Ошибка. Фактические данные не найдены.");
+    if(listFiles.isEmpty()) {
+        QMessageBox::warning(0,"Ошибка", "Фактические данные не найдены");
         return false;
     }
+    fileFact = listFiles[0];
+    //Записать полный путь к файлу
+    pathFactFile = pathFact + "/" + internalpathdirfact + "/" + selectPlant + "/" + fileFact;
 
     //Поиск прошлого файла с фактом
     listFiles.clear();
     listFiles = QDir(pathFact + "/" + internalpathdirfact + "/" + selectPlant).entryList(QStringList()
                 << internalpathdirfact + "_" + selectDate.addDays(-1).toString("dd.MM.yyyy") + "_21_??_??.csv",
                 QDir::Files);
-    if(!listFiles.isEmpty()) {
-        fileFactPrevious = listFiles[0];
-        //Записать полный путь к файлу
-        pathFactFilePrevious = pathFact + "/" + internalpathdirfact + "/" + selectPlant + "/" + fileFactPrevious;
-    }
-    else {
-        QMessageBox::warning(0,"Не найден факт предыдущего дня", "Внимание, часть фактических данных найти не удалось.\n"
-                                                                 "Для некоторых заказов, точность расчета может быть снижена.");
+    if(listFiles.isEmpty()) {
+        QMessageBox::warning(0,"Не найден факт предыдущего дня",
+                             "Внимание, часть фактических данных найти не удалось.\n"
+                             "Для некоторых заказов, точность расчета может быть снижена.");
         return true;
     }
+    fileFactPrevious = listFiles[0];
+    //Записать полный путь к файлу
+    pathFactFilePrevious = pathFact + "/" + internalpathdirfact + "/" + selectPlant + "/" + fileFactPrevious;
 
     //Поиск файла фактических приходов
     listFiles.clear();
     listFiles = QDir(pathFact + "/" + internalpathdirsupply).entryList(QStringList()
                 << internalpathdirsupply + "_" + selectDate.toString("dd.MM.yyyy") + "_21_??_??.csv",
                 QDir::Files);
-    if(!listFiles.isEmpty()) {
-        fileFactSupply = listFiles[0];
-        //Записать полный путь к файлу
-        pathFactFileSupply = pathFact + "/" + internalpathdirsupply + "/" + fileFactSupply;
-    }
-    else {
-        QMessageBox::warning(0,"Не найден факт приходов", "Внимание, часть фактических данных по приходам не найдена.\n"
-                                                                 "Точность расчета может быть снижена.");
+    if(listFiles.isEmpty()) {
+        QMessageBox::warning(0,"Не найден факт приходов",
+                             "Внимание, часть фактических данных по приходам не найдена.\n"
+                             "Точность расчета может быть снижена.");
         return true;
     }
+    fileFactSupply = listFiles[0];
+    //Записать полный путь к файлу
+    pathFactFileSupply = pathFact + "/" + internalpathdirsupply + "/" + fileFactSupply;
     return true;
 }
 
@@ -569,45 +542,40 @@ bool MainWindow::loadFileFact(const QString *pathfile,
 
     //факт приходов
     f.setFileName(*pathfilesupply);
-    if(QFile::exists(*pathfilesupply)) {
-        if(!f.open(QIODevice::ReadOnly | QIODevice::Text)) {
-            qDebug() << "Error read file pathfilesupply";
-            return false;
-        }
-        QTextStream stream(&f);
-        stream.setCodec("UTF-8");
-
-        //Прочитать первую строку в мусор
-        if(!stream.atEnd()) {
-            QString str = stream.readLine();
-            str = stream.readLine();
-        }
-        //Чтение данных
-        while (!stream.atEnd()) {
-            QString str = stream.readLine();
-            if(!str.isEmpty()) {
-                QStringList strlist;
-                strlist = str.split('\t');
-                rowListFactSupply.push_back(strlist);
-            }
-        }
-        f.close();
+    if(!QFile::exists(*pathfilesupply)) {
+        QMessageBox::warning(0,"Предупреждение", "Внимание, не найден путь к данным приходов.\n"
+                                "Точность расчета может быть снижена.");
+        return true;
     }
+    if(!f.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        QMessageBox::warning(0,"Предупреждение", "Внимание, не удается прочить файл приходов\n"
+                                "Точность расчета может быть снижена.");
+        return false;
+    }
+    QTextStream stream(&f);
+    stream.setCodec("UTF-8");
+
+    //Прочитать первую строку в мусор
+    if(!stream.atEnd()) {
+        QString str = stream.readLine();
+        str = stream.readLine();
+    }
+    //Чтение данных
+    while (!stream.atEnd()) {
+        QString str = stream.readLine();
+        if(!str.isEmpty()) {
+            QStringList strlist;
+            strlist = str.split('\t');
+            rowListFactSupply.push_back(strlist);
+        }
+    }
+    f.close();
     return true;
 }
 
 QString MainWindow::findSourceFile(const QString &pathdir)
 {
     QApplication::processEvents();
-    //Log Debug
-//    QFile file(QDir::tempPath() + "/" + "deb");
-//    if(QFile::exists(QDir::tempPath() + "/" + "deb")) {
-//        QFile::remove(QDir::tempPath() + "/" + "deb");
-//    }
-//    file.open(QIODevice::WriteOnly);
-//    QTextStream out(&file);
-//    out.setCodec("UTF-8");
-//    out << "start log\n";
 
     //Передаем путь к папке поиска
     QDir dir(pathdir);
@@ -797,76 +765,72 @@ bool MainWindow::calculation() {
             QRegExp rxMachine("(ZETA|WALDNER|SELO|DARBO|TERLET)");
             if(rxProductLocation.indexIn(rowListStep[rStep].at(rowListStep[0].indexOf("ProductLocationId"))) == -1) {
                 if(rxMachine.indexIn(rowListStep[rStep].at(rowListStep[0].indexOf("MachineId"))) == -1) {
-                    //if(rxOperation.indexIn(rowListStep[rStep].at(rowListStep[0].indexOf("OperationId"))) != -1) {
-                        addRowEmpty();
-                        rowListMain[rowListMain.length()-1][StepId] = rowListStep[rStep].at(rowListStep[0].indexOf("StepId"));
-                        rowListMain[rowListMain.length()-1][RunId] = rowListStep[rStep].at(rowListStep[0].indexOf("RunId"));
-                        rowListMain[rowListMain.length()-1][MachineId] = rowListStep[rStep].at(rowListStep[0].indexOf("MachineId")).mid(rowListStep[rStep].at(rowListStep[0].indexOf("MachineId")).indexOf("/")+1);
-                        rowListMain[rowListMain.length()-1][ProductLocationId] = rowListStep[rStep].at(rowListStep[0].indexOf("ProductLocationId")).left(rowListStep[rStep].at(rowListStep[0].indexOf("ProductLocationId")).indexOf("/"));
+                    addRowEmpty();
+                    rowListMain[rowListMain.length()-1][StepId] = rowListStep[rStep].at(rowListStep[0].indexOf("StepId"));
+                    rowListMain[rowListMain.length()-1][RunId] = rowListStep[rStep].at(rowListStep[0].indexOf("RunId"));
+                    rowListMain[rowListMain.length()-1][MachineId] = rowListStep[rStep].at(rowListStep[0].indexOf("MachineId")).mid(rowListStep[rStep].at(rowListStep[0].indexOf("MachineId")).indexOf("/")+1);
+                    rowListMain[rowListMain.length()-1][ProductLocationId] = rowListStep[rStep].at(rowListStep[0].indexOf("ProductLocationId")).left(rowListStep[rStep].at(rowListStep[0].indexOf("ProductLocationId")).indexOf("/"));
 
-                        //Поиск описания материала
-                        for(int rProduct = 1; rProduct < rowListProduct.length(); rProduct++) {
-                            if(rowListStep[rStep].at(rowListStep[0].indexOf("ProductLocationId")).left(rowListStep[rStep].at(rowListStep[0].indexOf("ProductLocationId")).indexOf("/"))
-                            == rowListProduct[rProduct].at(rowListProduct[0].indexOf("ProductId"))) {
-                                rowListMain[rowListMain.length()-1][Description] = rowListProduct[rProduct].at(rowListProduct[0].indexOf("DESCRIPTION"));
-                                break;
-                            }
-                            if(rProduct == rowListProduct.length()-1) {
-                                rowListMain[rowListMain.length()-1][Description] = "";
-                            }
+                    //Поиск описания материала
+                    for(int rProduct = 1; rProduct < rowListProduct.length(); rProduct++) {
+                        if(rowListStep[rStep].at(rowListStep[0].indexOf("ProductLocationId")).left(rowListStep[rStep].at(rowListStep[0].indexOf("ProductLocationId")).indexOf("/"))
+                        == rowListProduct[rProduct].at(rowListProduct[0].indexOf("ProductId"))) {
+                            rowListMain[rowListMain.length()-1][Description] = rowListProduct[rProduct].at(rowListProduct[0].indexOf("DESCRIPTION"));
+                            break;
                         }
+                        if(rProduct == rowListProduct.length()-1) {
+                            rowListMain[rowListMain.length()-1][Description] = "";
+                        }
+                    }
 
-                        //Маркер
-                        rowListMain[rowListMain.length()-1][Marker] = "";
+                    //Маркер
+                    rowListMain[rowListMain.length()-1][Marker] = "";
 
-                        //Версия
-                        if(rowListStep[rStep].at(rowListStep[0].indexOf("OperationId")).left(4) != "PRO/") {
-                            if(rowListStep[rStep].at(rowListStep[0].indexOf("OperationId")).indexOf("/") != -1) {
-                                int Pos = rowListStep[rStep].at(rowListStep[0].indexOf("OperationId")).indexOf("/");
-                                rowListMain[rowListMain.length()-1][Version] = rowListStep[rStep].at(rowListStep[0].indexOf("OperationId")).left(Pos);
-                            }
-                            else rowListMain[rowListMain.length()-1][Version] = "";
+                    //Версия
+                    if(rowListStep[rStep].at(rowListStep[0].indexOf("OperationId")).left(4) != "PRO/") {
+                        if(rowListStep[rStep].at(rowListStep[0].indexOf("OperationId")).indexOf("/") != -1) {
+                            int Pos = rowListStep[rStep].at(rowListStep[0].indexOf("OperationId")).indexOf("/");
+                            rowListMain[rowListMain.length()-1][Version] = rowListStep[rStep].at(rowListStep[0].indexOf("OperationId")).left(Pos);
                         }
                         else rowListMain[rowListMain.length()-1][Version] = "";
+                    }
+                    else rowListMain[rowListMain.length()-1][Version] = "";
 
-                        //Операция
-                        rowListMain[rowListMain.length()-1][OperationId] = rowListStep[rStep].at(rowListStep[0].indexOf("OperationId"));
+                    //Операция
+                    rowListMain[rowListMain.length()-1][OperationId] = rowListStep[rStep].at(rowListStep[0].indexOf("OperationId"));
 
-                        //Поиск номера PLO
-                        for(int rRun = 1; rRun < rowListRun.length(); rRun++) {
-                            if(rowListStep[rStep].at(rowListStep[0].indexOf("RunId")) == rowListRun[rRun].at(rowListRun[0].indexOf("RunId"))) {
-                                if(rowListRun[rRun].at(rowListRun[0].indexOf("ERPOrderId")).left(4) == "PLO/" || rowListRun[rRun].at(rowListRun[0].indexOf("ERPOrderId")).left(4) == "PRO/") {
-                                    rowListMain[rowListMain.length()-1][OrderPlan] = rowListRun[rRun].at(rowListRun[0].indexOf("ERPOrderId")).left(4) +
-                                    rowListRun[rRun].at(rowListRun[0].indexOf("ERPOrderId")).mid(rowListRun[rRun].at(rowListRun[0].indexOf("ERPOrderId")).indexOf("RFCOMP")+7);
-                                    break;
-                                }
-                                else {
-                                    rowListMain[rowListMain.length()-1][OrderPlan] = rowListRun[rRun].at(rowListRun[0].indexOf("ERPOrderId"));
-                                    break;
-                                }
+                    //Поиск номера PLO
+                    for(int rRun = 1; rRun < rowListRun.length(); rRun++) {
+                        if(rowListStep[rStep].at(rowListStep[0].indexOf("RunId")) == rowListRun[rRun].at(rowListRun[0].indexOf("RunId"))) {
+                            if(rowListRun[rRun].at(rowListRun[0].indexOf("ERPOrderId")).left(4) == "PLO/" || rowListRun[rRun].at(rowListRun[0].indexOf("ERPOrderId")).left(4) == "PRO/") {
+                                rowListMain[rowListMain.length()-1][OrderPlan] = rowListRun[rRun].at(rowListRun[0].indexOf("ERPOrderId")).left(4) +
+                                rowListRun[rRun].at(rowListRun[0].indexOf("ERPOrderId")).mid(rowListRun[rRun].at(rowListRun[0].indexOf("ERPOrderId")).indexOf("RFCOMP")+7);
+                                break;
                             }
-                            if(rRun == rowListRun.length()-1) {
-                                rowListMain[rowListMain.length()-1][OrderPlan] = "";
+                            else {
+                                rowListMain[rowListMain.length()-1][OrderPlan] = rowListRun[rRun].at(rowListRun[0].indexOf("ERPOrderId"));
+                                break;
                             }
                         }
+                        if(rRun == rowListRun.length()-1) {
+                            rowListMain[rowListMain.length()-1][OrderPlan] = "";
+                        }
+                    }
 
-                        QDateTime dt;
-                        dt = QDateTime::fromString(rowListStep[rStep].at(rowListStep[0].indexOf("StartDate")), "yyyy-MM-dd hh:mm:ss");
-                        rowListMain[rowListMain.length()-1][StartPlan] = dt.toString("dd.MM.yyyy hh:mm:ss");
+                    QDateTime dt;
+                    dt = QDateTime::fromString(rowListStep[rStep].at(rowListStep[0].indexOf("StartDate")), "yyyy-MM-dd hh:mm:ss");
+                    rowListMain[rowListMain.length()-1][StartPlan] = dt.toString("dd.MM.yyyy hh:mm:ss");
 
-                        dt = QDateTime::fromString(rowListStep[rStep].at(rowListStep[0].indexOf("EndDate")), "yyyy-MM-dd hh:mm:ss");
-                        rowListMain[rowListMain.length()-1][EndPlan] = dt.toString("dd.MM.yyyy hh:mm:ss");
+                    dt = QDateTime::fromString(rowListStep[rStep].at(rowListStep[0].indexOf("EndDate")), "yyyy-MM-dd hh:mm:ss");
+                    rowListMain[rowListMain.length()-1][EndPlan] = dt.toString("dd.MM.yyyy hh:mm:ss");
 
-                        float PlanQty = rowListStep[rStep].at(rowListStep[0].indexOf("PlannedQuantity")).toFloat();
-                        QString str;
-                        rowListMain[rowListMain.length()-1][QuantityPlan] = str.number(PlanQty);
-                        //rowListMain.append(s);
-                    //}
+                    float PlanQty = rowListStep[rStep].at(rowListStep[0].indexOf("PlannedQuantity")).toFloat();
+                    QString str;
+                    rowListMain[rowListMain.length()-1][QuantityPlan] = str.number(PlanQty);
                 }
             }
         }
     }
-
 
     //Поиск номера PRO
     for(int rMain = 0; rMain < rowListMain.length(); rMain++) {
@@ -935,9 +899,9 @@ bool MainWindow::calculation() {
                          ORDER = rowListFact[rFact].at(rowListFact[0].indexOf("AUFNR"));
                          addRowEmpty();
                          //StepId
-                         rowListMain[rowListMain.length()-1][StepId] = "SAP";
+                         rowListMain[rowListMain.length()-1][StepId] = "ERP";
                          //RunId
-                         rowListMain[rowListMain.length()-1][RunId] = "Вручную SAP";
+                         rowListMain[rowListMain.length()-1][RunId] = "ERP вручную";
                          //Машина
                          rowListMain[rowListMain.length()-1][MachineId] = rowListFact[rFact].at(rowListFact[0].indexOf("MDV01"));
                          //Материал
@@ -985,9 +949,9 @@ bool MainWindow::calculation() {
                     else if(createdate.addSecs(timecorrection) <= QDateTime(selectDate) && changedate.addSecs(timecorrection) >= QDateTime(selectDate)) {
                         ORDER = rowListFact[rFact].at(rowListFact[0].indexOf("AUFNR"));
                         //StepId
-                        rowListMain[rowListMain.length()-1][StepId] = "SAP";
+                        rowListMain[rowListMain.length()-1][StepId] = "ERP";
                         //RunId
-                        rowListMain[rowListMain.length()-1][RunId] = "Вручную SAP";
+                        rowListMain[rowListMain.length()-1][RunId] = "ERP вручную";
                         //Машина
                         rowListMain[rowListMain.length()-1][MachineId] = rowListFact[rFact].at(rowListFact[0].indexOf("MDV01"));
                         //Материал
@@ -1046,12 +1010,12 @@ bool MainWindow::calculation() {
                                             //Внести маркер
                                             if((Qty - QtyPrev) != 0) {
                                                 rowListMain[rowListMain.length()-1][DeliveryFact] = QString::number(Qty);
-                                                //Маркер для сигнала, что заказ был изменен
+                                                //Маркер, что заказ был изменен
                                                 rowListMain[rowListMain.length()-1][Marker].append("?");
                                             }
                                             else {
                                                 rowListMain[rowListMain.length()-1][DeliveryFact] = "0";
-                                                //Маркер для сигнала, что заказ не был изменен
+                                                //Маркер, что заказ не был изменен
                                                 rowListMain[rowListMain.length()-1][Marker].append("!");
                                             }
                                             break;
@@ -1709,7 +1673,7 @@ bool MainWindow::calculation() {
                          + "Факт: " + selectDate.addDays(1).toString("dd.MM.yyyy 00:00:00") + "\t");
 
     TableModelMain *model = new TableModelMain();
-    model->rowList.append(rowListMain);
+    model->rowList.append(MainWindow::rowListMain);
     model->Plant = &selectPlant;
     model->CheckDate = &selectDate;
     model->MilkCriteria = &MilkCriteria;
@@ -1725,7 +1689,7 @@ bool MainWindow::calculation() {
     //Размеры
     ui->tableView->resizeColumnsToContents();
     ui->tableView->resizeRowsToContents();
-    ui->tableView->setColumnWidth(TableModelMain::Column::Description, 200);
+    ui->tableView->setColumnWidth(Description, 200);
     for(int i = 0; i < rowListMain.length(); i++)
         ui->tableView->setRowHeight(i, 10);
     ui->tableView->update();
@@ -2017,139 +1981,131 @@ void MainWindow::addTotalRow() {
 bool MainWindow::loadCompopentsData() {
 
     if(pathFact.isEmpty()) {
-        qDebug() << "Error. Path fact no set";
         QMessageBox::warning(0,"Ошибка", "Не найдена директория с фактическими данными. Пожалуйста выполните Поиск через меню.");
-        labelstatus->setText("Ошибка");
+        activategui(true);
         return false;
     }
 
     QString pathData;
     pathData = pathFact + "/planfactmilk/components.cfg";
     QFile f(pathData);
-    if(QFile::exists(pathData)) {
-        if(!f.open(QIODevice::ReadOnly | QIODevice::Text)) {
-            qDebug() << "Error read components.cfg";
-            QMessageBox::warning(0,"Ошибка", "Невозможно прочитать файл components.cfg");
-            labelstatus->setText("Ошибка");
-            return false;
-        }
+    if(!QFile::exists(pathData)) {
+        QMessageBox::warning(0,"Ошибка", "Не найден файл components.cfg");
+        activategui(true);
+        return false;
+    }
+    if(!f.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        QMessageBox::warning(0,"Ошибка", "Невозможно прочитать файл components.cfg");
+        activategui(true);
+        return false;
+    }
 
-        QTextStream stream(&f);
-        stream.setCodec("UTF-8");
+    QTextStream stream(&f);
+    stream.setCodec("UTF-8");
 
-        //Прочитать первую строку в заголовок
-        QStringList listHead;
-        if(!stream.atEnd()) {
-            QString str = stream.readLine();
-            listHead = str.split('\t');
-        }
-        //Чтение
-        while (!stream.atEnd()) {
-            QString str = stream.readLine();
-            if(!str.isEmpty()) {
-                QStringList strlist;
-                strlist = str.split('\t');
+    //Прочитать первую строку в заголовок
+    QStringList listHead;
+    if(!stream.atEnd()) {
+        QString str = stream.readLine();
+        listHead = str.split('\t');
+    }
+    //Чтение
+    while (!stream.atEnd()) {
+        QString str = stream.readLine();
+        if(!str.isEmpty()) {
+            QStringList strlist;
+            strlist = str.split('\t');
 
-                if(!strlist.isEmpty()) {
-                    if(strlist.at(listHead.indexOf("Plant")) == selectPlant) {
-                        if(strlist.at(listHead.indexOf("Type")) == "milk") {
-                            if(strlist.at(listHead.indexOf("Category")) == "plan") {
-                                listMilkPlan << strlist[3];
-                            }
-                            if(strlist.at(listHead.indexOf("Category")) == "fact") {
-                                listMilkFact << strlist[3];
-                            }
+            if(!strlist.isEmpty()) {
+                if(strlist.at(listHead.indexOf("Plant")) == selectPlant) {
+                    if(strlist.at(listHead.indexOf("Type")) == "milk") {
+                        if(strlist.at(listHead.indexOf("Category")) == "plan") {
+                            listMilkPlan << strlist[3];
                         }
-                        if(strlist.at(listHead.indexOf("Type")) == "skmilk") {
-                            if(strlist.at(listHead.indexOf("Category")) == "plan") {
-                                listSkMilkPlan << strlist[3];
-                            }
-                            if(strlist.at(listHead.indexOf("Category")) == "fact") {
-                                listSkMilkFact << strlist[3];
-                            }
+                        if(strlist.at(listHead.indexOf("Category")) == "fact") {
+                            listMilkFact << strlist[3];
                         }
-                        if(strlist.at(listHead.indexOf("Type")) == "cream") {
-                            if(strlist.at(listHead.indexOf("Category")) == "plan") {
-                                listCreamPlan << strlist[3];
-                            }
-                            if(strlist.at(listHead.indexOf("Category")) == "fact") {
-                                listCreamFact << strlist[3];
-                            }
+                    }
+                    if(strlist.at(listHead.indexOf("Type")) == "skmilk") {
+                        if(strlist.at(listHead.indexOf("Category")) == "plan") {
+                            listSkMilkPlan << strlist[3];
+                        }
+                        if(strlist.at(listHead.indexOf("Category")) == "fact") {
+                            listSkMilkFact << strlist[3];
+                        }
+                    }
+                    if(strlist.at(listHead.indexOf("Type")) == "cream") {
+                        if(strlist.at(listHead.indexOf("Category")) == "plan") {
+                            listCreamPlan << strlist[3];
+                        }
+                        if(strlist.at(listHead.indexOf("Category")) == "fact") {
+                            listCreamFact << strlist[3];
                         }
                     }
                 }
             }
         }
-        f.close();
     }
-    else {
-        QMessageBox::warning(0,"Ошибка", "Не найден файл components.cfg");
-        labelstatus->setText("Ошибка");
-        return false;
-    }
+    f.close();
     return true;
 }
 
 
 //Загрузка нормативных критериев
 bool MainWindow::loadCriteria() {
-
     if(pathFact.isEmpty()) {
-        qDebug() << "Error. Path fact no set";
-        QMessageBox::warning(0,"Ошибка", "Не найдена директория с фактическими данными. Пожалуйста выполните Поиск через меню.");
-        labelstatus->setText("Ошибка");
+        QMessageBox::warning(0,"Ошибка", "Не найдена директория с фактическими данными. "
+                                         "Пожалуйста выполните Поиск через меню.");
+        activategui(true);
         return false;
     }
 
     QString pathData;
     pathData = pathFact + "/planfactmilk/criteria.cfg";
     QFile f(pathData);
-    if(QFile::exists(pathData)) {
-        if(!f.open(QIODevice::ReadOnly | QIODevice::Text)) {
-            qDebug() << "Error read file criteria.cfg";
-            QMessageBox::warning(0,"Ошибка", "Невозможно прочитать файл criteria.cfg");
-            labelstatus->setText("Ошибка");
-            return false;
-        }
+    if(!QFile::exists(pathData)) {
+        QMessageBox::warning(0,"Ошибка", "Не найден файл criteria.cfg");
+        activategui(true);
+        return false;
+    }
+    if(!f.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        QMessageBox::warning(0,"Ошибка", "Невозможно прочитать файл criteria.cfg");
+        activategui(true);
+        return false;
+    }
 
-        QTextStream stream(&f);
-        stream.setCodec("UTF-8");
+    QTextStream stream(&f);
+    stream.setCodec("UTF-8");
 
-        //Прочитать первую строку в заголовок
-        QStringList listHead;
-        if(!stream.atEnd()) {
-            QString str = stream.readLine();
-            listHead = str.split('\t');
-        }
-        //Чтение
-        while (!stream.atEnd()) {
-            QString str = stream.readLine();
-            if(!str.isEmpty()) {
-                QStringList strlist;
-                strlist = str.split('\t');
+    //Прочитать первую строку в заголовок
+    QStringList listHead;
+    if(!stream.atEnd()) {
+        QString str = stream.readLine();
+        listHead = str.split('\t');
+    }
+    //Чтение
+    while (!stream.atEnd()) {
+        QString str = stream.readLine();
+        if(!str.isEmpty()) {
+            QStringList strlist;
+            strlist = str.split('\t');
 
-                if(!strlist.isEmpty()) {
-                    if(strlist.at(listHead.indexOf("Plant")) == selectPlant) {
-                        if(strlist.at(listHead.indexOf("Type")) == "milk") {
-                            MilkCriteria = strlist[2].toFloat();
-                        }
-                        if(strlist.at(listHead.indexOf("Type")) == "skmilk") {
-                            SkMilkCriteria = strlist[2].toFloat();
-                        }
-                        if(strlist.at(listHead.indexOf("Type")) == "cream") {
-                            CreamCriteria = strlist[2].toFloat();
-                        }
+            if(!strlist.isEmpty()) {
+                if(strlist.at(listHead.indexOf("Plant")) == selectPlant) {
+                    if(strlist.at(listHead.indexOf("Type")) == "milk") {
+                        MilkCriteria = strlist[2].toFloat();
+                    }
+                    if(strlist.at(listHead.indexOf("Type")) == "skmilk") {
+                        SkMilkCriteria = strlist[2].toFloat();
+                    }
+                    if(strlist.at(listHead.indexOf("Type")) == "cream") {
+                        CreamCriteria = strlist[2].toFloat();
                     }
                 }
             }
         }
-        f.close();
     }
-    else {
-        QMessageBox::warning(0,"Ошибка", "Не найден файл criteria.cfg");
-        labelstatus->setText("Ошибка");
-        return false;
-    }
+    f.close();
     return true;
 }
 
