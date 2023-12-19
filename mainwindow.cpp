@@ -380,6 +380,8 @@ bool MainWindow::findFileFact() {
     fileFactPrevious = "";
     pathFactFilePrevious = "";
 
+    labelstatus->setText("Поиск фактических данных. Пожалуйста, подождите...");
+
     //Поиск файла с фактом
     QStringList listFiles;
     listFiles = QDir(pathFact + "/" + internalpathdirfact + "/" + selectPlant).entryList(QStringList()
@@ -387,6 +389,7 @@ bool MainWindow::findFileFact() {
                 QDir::Files);
     if(listFiles.isEmpty()) {
         QMessageBox::warning(0,"Ошибка", "Фактические данные не найдены");
+        labelstatus->setText("Ошибка");
         return false;
     }
     fileFact = listFiles[0];
@@ -435,6 +438,7 @@ bool MainWindow::loadFileFact(const QString *pathfile,
     if(QFile::exists(*pathfile)) {
         if(!f.open(QIODevice::ReadOnly | QIODevice::Text)) {
             qDebug() << "Error read file pathfile";
+            labelstatus->setText("Ошибка");
             return false;
         }
         QTextStream stream(&f);
@@ -490,7 +494,7 @@ bool MainWindow::loadFileFact(const QString *pathfile,
     if(QFile::exists(*pathfileprevious)) {
         if(!f.open(QIODevice::ReadOnly | QIODevice::Text)) {
             qDebug() << "Error read file pathfileprevious";
-            return false;
+            return true;
         }
         QTextStream stream(&f);
         stream.setCodec("UTF-8");
@@ -550,7 +554,7 @@ bool MainWindow::loadFileFact(const QString *pathfile,
     if(!f.open(QIODevice::ReadOnly | QIODevice::Text)) {
         QMessageBox::warning(0,"Предупреждение", "Внимание, не удается прочить файл приходов\n"
                                 "Точность расчета может быть снижена.");
-        return false;
+        return true;
     }
     QTextStream stream(&f);
     stream.setCodec("UTF-8");
