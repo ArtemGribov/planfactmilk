@@ -108,6 +108,7 @@ private:
     QString pathFactFileSupply;
     int timerId;
     QString namefileplanmask;
+    int timecorrection;
     QString internalpathdirfact;
     QString internalpathdirsupply;
     QStringList admin;

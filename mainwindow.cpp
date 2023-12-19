@@ -16,7 +16,7 @@ MainWindow::MainWindow(QWidget *parent)
     ui->setupUi(this);
 
     //Версия
-    version = "2.4.1";
+    version = "2.4.2";
 
     //Дата
     ui->dateEdit->setDate(QDateTime::currentDateTime().date().addDays(-1));
@@ -41,7 +41,7 @@ void MainWindow::on_dateEdit_userDateChanged(const QDate &date)
     ui->dateEdit->setDate(date);
 }
 
-//Конфигуратор настоек пользователя
+//Конфигуратор настроек пользователя
 bool MainWindow::on_action_FindDirectoryFact_triggered()
 {
     QApplication::processEvents();
@@ -154,6 +154,7 @@ bool MainWindow::on_pushButtonStart_clicked()
     namefileplanmask.clear();
     internalpathdirfact.clear();
     internalpathdirsupply.clear();
+    timecorrection = 0;
     user.clear();
     admin.clear();
 
@@ -218,6 +219,12 @@ bool MainWindow::on_pushButtonStart_clicked()
                                 return false;
                             }
                         }
+                    }
+                    //Коррекция по сдвигу времени UTC
+                    if(strlist[0] == "timecorrection") {
+                        bool ok;
+                        timecorrection = 3600 * strlist[1].toInt(&ok);
+                        if(!ok) QMessageBox::warning(0,"Не корректные настройки времени", "Проверьте данные в конфигураторе");
                     }
                     //Путь к директории плана
                     if(strlist[0] == "pathdirplan") {
@@ -782,9 +789,6 @@ bool MainWindow::calculation() {
     //Загрузка нормативных отклонений
     if(!loadCriteria()) { return false; }
 
-    //Коррекция по сдвигу времени UTC
-    int timeCorrection = 60 * 60 * 2;
-
     //Обработка данных
     for(int rStep = 1; rStep < rowListStep.length(); rStep++) {
         //Фильтр
@@ -927,7 +931,7 @@ bool MainWindow::calculation() {
                  changedate = QDateTime::fromString(rowListFact[rFact].at(rowListFact[0].indexOf("AEDAT")) + " " + rowListFact[rFact].at(rowListFact[0].indexOf("AEZEIT")), "dd.MM.yyyy hh:mm:ss");
                  if(ORDER.isEmpty() || ORDER != rowListFact[rFact].at(rowListFact[0].indexOf("AUFNR"))) {
                     //Заказы которые созданы в день оценки
-                    if(createdate.addSecs(timeCorrection) >= QDateTime(selectDate)) {
+                    if(createdate.addSecs(timecorrection) >= QDateTime(selectDate)) {
                          ORDER = rowListFact[rFact].at(rowListFact[0].indexOf("AUFNR"));
                          addRowEmpty();
                          //StepId
@@ -978,7 +982,7 @@ bool MainWindow::calculation() {
                          rowListMain[rowListMain.length()-1][DeliveryFact] = QString::number(Qty);
                      }
                     //Заказы которые созданы в прошлом, но скорректированы в день оценки
-                    else if(createdate.addSecs(timeCorrection) <= QDateTime(selectDate) && changedate.addSecs(timeCorrection) >= QDateTime(selectDate)) {
+                    else if(createdate.addSecs(timecorrection) <= QDateTime(selectDate) && changedate.addSecs(timecorrection) >= QDateTime(selectDate)) {
                         ORDER = rowListFact[rFact].at(rowListFact[0].indexOf("AUFNR"));
                         //StepId
                         rowListMain[rowListMain.length()-1][StepId] = "SAP";
@@ -1098,7 +1102,7 @@ bool MainWindow::calculation() {
                         }
                         else if(rMain == rowListMain.length()-1) {
                             //Заказы которые созданы в день оценки
-                            if(createdate.addSecs(timeCorrection) >= QDateTime(selectDate)) {
+                            if(createdate.addSecs(timecorrection) >= QDateTime(selectDate)) {
                                  //StepId
                                  rowListMain[rowListMain.length()-1][StepId] = "";
                                  //RunId
