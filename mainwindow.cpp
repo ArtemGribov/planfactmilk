@@ -16,7 +16,7 @@ MainWindow::MainWindow(QWidget *parent)
     ui->setupUi(this);
 
     //Версия
-    version = "2.4.3";
+    version = "2.4.5";
 
     //Дата
     ui->dateEdit->setDate(QDateTime::currentDateTime().date().addDays(-1));
@@ -71,7 +71,7 @@ bool MainWindow::on_action_FindDirectoryFact_triggered()
 }
 
 //Поиск директории с фактом
-QString MainWindow::findDirFact(const QDir &dirFact) {
+QString MainWindow::findDirFact(const QDir dirFact) {
     QApplication::processEvents();
     QStringList listDir = dirFact.entryList(QDir::NoDot | QDir::NoDotDot | QDir::Dirs);
     foreach(QString subdir, listDir) {
@@ -154,6 +154,7 @@ bool MainWindow::on_pushButtonStart_clicked()
     listMilkFact.clear();
     listSkMilkFact.clear();
     listCreamFact.clear();
+    listExcludeInternalMove.clear();
 
     pathdirplan.clear();
     namefileplanmask.clear();
@@ -275,7 +276,7 @@ bool MainWindow::on_pushButtonStart_clicked()
             return false;
         }
         //Загрузка файла с фактом
-        if(!loadFileFact(&pathFactFile, &pathFactFilePrevious, &pathFactFileSupply)) {
+        if(!loadFileFact(pathFactFile, pathFactFilePrevious, pathFactFileSupply)) {
             QMessageBox::warning(0,"Ошибка", "Ошибка загрузки факта");
             activategui(true);
             return false;
@@ -348,7 +349,7 @@ bool MainWindow::on_pushButtonStart_clicked()
             return false;
         }
         //Загрузка файлов с фактом
-        if(!loadFileFact(&pathFactFile, &pathFactFilePrevious, &pathFactFileSupply)) {
+        if(!loadFileFact(pathFactFile, pathFactFilePrevious, pathFactFileSupply)) {
             QMessageBox::warning(0,"Ошибка", "Ошибка загрузки факта");
             activategui(true);
             return false;
@@ -430,12 +431,12 @@ bool MainWindow::findFileFact() {
 
 
 //Загрузка фактических данных
-bool MainWindow::loadFileFact(const QString *pathfile,
-                              const QString *pathfileprevious,
-                              const QString *pathfilesupply) {
+bool MainWindow::loadFileFact(const QString pathfile,
+                              const QString pathfileprevious,
+                              const QString pathfilesupply) {
     //Загрузка факта
-    QFile f(*pathfile);
-    if(QFile::exists(*pathfile)) {
+    QFile f(pathfile);
+    if(QFile::exists(pathfile)) {
         if(!f.open(QIODevice::ReadOnly | QIODevice::Text)) {
             qDebug() << "Error read file pathfile";
             labelstatus->setText("Ошибка");
@@ -490,8 +491,8 @@ bool MainWindow::loadFileFact(const QString *pathfile,
     }
 
     //факт предыдущего дня
-    f.setFileName(*pathfileprevious);
-    if(QFile::exists(*pathfileprevious)) {
+    f.setFileName(pathfileprevious);
+    if(QFile::exists(pathfileprevious)) {
         if(!f.open(QIODevice::ReadOnly | QIODevice::Text)) {
             qDebug() << "Error read file pathfileprevious";
             return true;
@@ -545,8 +546,8 @@ bool MainWindow::loadFileFact(const QString *pathfile,
     }
 
     //факт приходов
-    f.setFileName(*pathfilesupply);
-    if(!QFile::exists(*pathfilesupply)) {
+    f.setFileName(pathfilesupply);
+    if(!QFile::exists(pathfilesupply)) {
         QMessageBox::warning(0,"Предупреждение", "Внимание, не найден путь к данным приходов.\n"
                                 "Точность расчета может быть снижена.");
         return true;
@@ -577,7 +578,7 @@ bool MainWindow::loadFileFact(const QString *pathfile,
     return true;
 }
 
-QString MainWindow::findSourceFile(const QString &pathdir)
+QString MainWindow::findSourceFile(const QString pathdir)
 {
     QApplication::processEvents();
 
@@ -618,9 +619,9 @@ public:
 };
 
 
-void MainWindow::startUnpack(const QString &pathprogram,
-                            const QString &pathdirplan,
-                            const QString &pathdestiny)
+void MainWindow::startUnpack(const QString pathprogram,
+                            const QString pathdirplan,
+                            const QString pathdestiny)
 {
     QApplication::processEvents();
     QDetachableProcess p;
@@ -1074,7 +1075,7 @@ bool MainWindow::calculation() {
                 if(rowListMain[rMain][StepId] == rowListProductFlow[rFlow].at(rowListProductFlow[0].indexOf("StepId"))) {
                     const QString material = rowListProductFlow[rFlow].at(rowListProductFlow[0].indexOf("ProductId"));
                     const QString plant = rowListProductFlow[rFlow].at(rowListProductFlow[0].indexOf("LocationId"));
-                    if(isComponent(&cat, &type, &material, &plant)) {
+                    if(isComponent(cat, type, material, plant)) {
                         SumQty += rowListProductFlow[rFlow].at(rowListProductFlow[0].indexOf("Quantity")).toFloat();
                     }
                 }
@@ -1097,7 +1098,7 @@ bool MainWindow::calculation() {
                 if(rowListMain[rMain][StepId] == rowListProductFlow[rFlow].at(rowListProductFlow[0].indexOf("StepId"))) {
                     const QString material = rowListProductFlow[rFlow].at(rowListProductFlow[0].indexOf("ProductId"));
                     const QString plant = rowListProductFlow[rFlow].at(rowListProductFlow[0].indexOf("LocationId"));
-                    if(isComponent(&cat, &type, &material, &plant)) {
+                    if(isComponent(cat, type, material, plant)) {
                         SumQty += rowListProductFlow[rFlow].at(rowListProductFlow[0].indexOf("Quantity")).toFloat();
                     }
                 }
@@ -1120,7 +1121,7 @@ bool MainWindow::calculation() {
                 if(rowListMain[rMain][StepId] == rowListProductFlow[rFlow].at(rowListProductFlow[0].indexOf("StepId"))) {
                     const QString material = rowListProductFlow[rFlow].at(rowListProductFlow[0].indexOf("ProductId"));
                     const QString plant = rowListProductFlow[rFlow].at(rowListProductFlow[0].indexOf("LocationId"));
-                    if(isComponent(&cat, &type, &material, &plant)) {
+                    if(isComponent(cat, type, material, plant)) {
                         SumQty += rowListProductFlow[rFlow].at(rowListProductFlow[0].indexOf("Quantity")).toFloat();
                     }
 
@@ -1153,7 +1154,7 @@ bool MainWindow::calculation() {
                                 const QString cat = "fact";
                                 const QString type = "milk";
                                 QString material = QString::number(rowListFact[rFact].at(rowListFact[0].indexOf("MATNR_COM")).toInt());
-                                if(isComponent(&cat, &type, &material, &selectPlant)) {
+                                if(isComponent(cat, type, material, selectPlant)) {
                                     if(rowListFact[rFact].at(rowListFact[0].indexOf("ASTTX")).left(4) == "CMPL" ||
                                     rowListFact[rFact].at(rowListFact[0].indexOf("ASTTX")).left(4) == "TECO") {
                                         SumQtyIn += -1.0 * rowListFact[rFact].at(rowListFact[0].indexOf("COM_DENMNG_KG")).toFloat();
@@ -1181,7 +1182,7 @@ bool MainWindow::calculation() {
                                 }
                                 //Факт производства молока
                                 material = QString::number(rowListFact[rFact].at(rowListFact[0].indexOf("PLNBEZ")).toInt());
-                                if(isComponent(&cat, &type, &material, &selectPlant)) {
+                                if(isComponent(cat, type, material, selectPlant)) {
                                     if(QtyOut == 0.0) {
                                         if(rowListFact[rFact].at(rowListFact[0].indexOf("ASTTX")).left(4) == "INTL" ||
                                         rowListFact[rFact].at(rowListFact[0].indexOf("ASTTX")).left(4) == "UNTE")
@@ -1240,7 +1241,7 @@ bool MainWindow::calculation() {
                                 const QString cat = "fact";
                                 const QString type = "skmilk";
                                 QString material = QString::number(rowListFact[rFact].at(rowListFact[0].indexOf("MATNR_COM")).toInt());
-                                if(isComponent(&cat, &type, &material, &selectPlant)) {
+                                if(isComponent(cat, type, material, selectPlant)) {
                                     if(rowListFact[rFact].at(rowListFact[0].indexOf("ASTTX")).left(4) == "CMPL" ||
                                     rowListFact[rFact].at(rowListFact[0].indexOf("ASTTX")).left(4) == "TECO") {
                                         SumQtyIn += -1.0 * rowListFact[rFact].at(rowListFact[0].indexOf("COM_DENMNG_KG")).toFloat();
@@ -1268,7 +1269,7 @@ bool MainWindow::calculation() {
                                 }
                                 //Факт производства обрата
                                 material = QString::number(rowListFact[rFact].at(rowListFact[0].indexOf("PLNBEZ")).toInt());
-                                if(isComponent(&cat, &type, &material, &selectPlant)) {
+                                if(isComponent(cat, type, material, selectPlant)) {
                                     if(QtyOut == 0.0) {
                                         if(rowListFact[rFact].at(rowListFact[0].indexOf("ASTTX")).left(4) == "INTL" ||
                                         rowListFact[rFact].at(rowListFact[0].indexOf("ASTTX")).left(4) == "UNTE")
@@ -1326,7 +1327,7 @@ bool MainWindow::calculation() {
                                 const QString cat = "fact";
                                 const QString type = "cream";
                                 QString material = QString::number(rowListFact[rFact].at(rowListFact[0].indexOf("MATNR_COM")).toInt());
-                                if(isComponent(&cat, &type, &material, &selectPlant)) {
+                                if(isComponent(cat, type, material, selectPlant)) {
                                     if(rowListFact[rFact].at(rowListFact[0].indexOf("ASTTX")).left(4) == "CMPL" ||
                                     rowListFact[rFact].at(rowListFact[0].indexOf("ASTTX")).left(4) == "TECO") {
                                         SumQtyIn += -1.0 * rowListFact[rFact].at(rowListFact[0].indexOf("COM_DENMNG_KG")).toFloat();
@@ -1354,7 +1355,7 @@ bool MainWindow::calculation() {
                                 }
                                 //Факт производства сливок
                                 material = QString::number(rowListFact[rFact].at(rowListFact[0].indexOf("PLNBEZ")).toInt());
-                                if(isComponent(&cat, &type, &material, &selectPlant)) {
+                                if(isComponent(cat, type, material, selectPlant)) {
                                     if(QtyOut == 0.0) {
                                         if(rowListFact[rFact].at(rowListFact[0].indexOf("ASTTX")).left(4) == "INTL" ||
                                         rowListFact[rFact].at(rowListFact[0].indexOf("ASTTX")).left(4) == "UNTE")
@@ -1391,106 +1392,19 @@ bool MainWindow::calculation() {
         }
     }
 
+    //План приходов
+    setPlanTransfer("plan", "milk");
+    setPlanTransfer("plan", "skmilk");
+    setPlanTransfer("plan", "cream");
 
-    //План прихода молока
+    //Корректировка по молоку
     addRowEmpty();
     float Qty = 0.0;
     for(int rStock = 1; rStock < rowListStock.length(); rStock++) {
         const QString cat = "plan";
         const QString type = "milk";
         const QString mat = rowListStock[rStock].at(rowListStock[0].indexOf("ProductId"));
-        if(isComponent(&cat, &type, &mat, &selectPlant)) {
-            if(rowListStock[rStock].at(rowListStock[0].indexOf("StockType")) == "movement") {
-                if(rowListStock[rStock].at(rowListStock[0].indexOf("ToWhId")).left(4) == selectPlant) {
-                    QDateTime dt;
-                    dt = QDateTime::fromString(rowListStock[rStock].at(rowListStock[0].indexOf("StartDate")), "yyyy-MM-dd hh:mm:ss");
-                    if(dt < QDateTime(selectDate.addDays(1))) {
-                        if(rowListStock[rStock].at(rowListStock[0].indexOf("Source")) != "Manual added stock level") {
-                            if(rowListStock[rStock].at(rowListStock[0].indexOf("ToWhId")).indexOf("$Outside") != -1) {
-                                Qty += -1.0 * rowListStock[rStock].at(rowListStock[0].indexOf("Quantity")).toFloat();
-                            }
-                            else Qty += rowListStock[rStock].at(rowListStock[0].indexOf("Quantity")).toFloat();
-                        }
-                    }
-                }
-            }
-        }
-    }
-    rowListMain[rowListMain.length()-1][ProductLocationId] = "milk";
-    rowListMain[rowListMain.length()-1][EndPlan] = selectDate.toString("dd.MM.yyyy 23:59:59");
-    rowListMain[rowListMain.length()-1][OrderPlan] = "ПРИВОЗ";
-    rowListMain[rowListMain.length()-1][QuantityPlan] = QString::number(Qty);
-    rowListMain[rowListMain.length()-1][MilkReqPlan] = QString::number(Qty);
-
-
-
-    //План прихода обрата
-    addRowEmpty();
-    Qty = 0.0;
-    for(int rStock = 1; rStock < rowListStock.length(); rStock++) {
-        const QString cat = "plan";
-        const QString type = "skmilk";
-        const QString mat = rowListStock[rStock].at(rowListStock[0].indexOf("ProductId"));
-        if(isComponent(&cat, &type, &mat, &selectPlant)) {
-            if(rowListStock[rStock].at(rowListStock[0].indexOf("StockType")) == "movement") {
-                if(rowListStock[rStock].at(rowListStock[0].indexOf("ToWhId")).left(4) == selectPlant) {
-                    QDateTime dt;
-                    dt = QDateTime::fromString(rowListStock[rStock].at(rowListStock[0].indexOf("StartDate")), "yyyy-MM-dd hh:mm:ss");
-                    if(dt < QDateTime(selectDate.addDays(1))) {
-                        if(rowListStock[rStock].at(rowListStock[0].indexOf("ToWhId")).indexOf("$Outside") != -1) {
-                            Qty += -1.0 * rowListStock[rStock].at(rowListStock[0].indexOf("Quantity")).toFloat();
-                        }
-                        else Qty += rowListStock[rStock].at(rowListStock[0].indexOf("Quantity")).toFloat();
-                    }
-                }
-            }
-        }
-    }
-    rowListMain[rowListMain.length()-1][ProductLocationId] = "skimmed milk";
-    rowListMain[rowListMain.length()-1][EndPlan] = selectDate.toString("dd.MM.yyyy 23:59:59");
-    rowListMain[rowListMain.length()-1][OrderPlan] = "ПРИВОЗ";
-    rowListMain[rowListMain.length()-1][QuantityPlan] = QString::number(Qty);
-    rowListMain[rowListMain.length()-1][SkMilkReqPlan] = QString::number(Qty);
-
-
-    //План прихода сливок
-    addRowEmpty();
-    Qty = 0.0;
-    for(int rStock = 1; rStock < rowListStock.length(); rStock++) {
-        const QString cat = "plan";
-        const QString type = "cream";
-        const QString mat = rowListStock[rStock].at(rowListStock[0].indexOf("ProductId"));
-        if(isComponent(&cat, &type, &mat, &selectPlant)) {
-            if(rowListStock[rStock].at(rowListStock[0].indexOf("StockType")) == "movement") {
-                if(rowListStock[rStock].at(rowListStock[0].indexOf("ToWhId")).left(4) == selectPlant) {
-                    QDateTime dt;
-                    dt = QDateTime::fromString(rowListStock[rStock].at(rowListStock[0].indexOf("StartDate")), "yyyy-MM-dd hh:mm:ss");
-                    if(dt < QDateTime(selectDate.addDays(1))) {
-                        if(rowListStock[rStock].at(rowListStock[0].indexOf("ToWhId")).indexOf("$Outside") != -1) {
-                            Qty += -1.0 * rowListStock[rStock].at(rowListStock[0].indexOf("Quantity")).toFloat();
-                        }
-                        else Qty += rowListStock[rStock].at(rowListStock[0].indexOf("Quantity")).toFloat();
-                    }
-                }
-            }
-        }
-    }
-    rowListMain[rowListMain.length()-1][ProductLocationId] = "Сливки";
-    rowListMain[rowListMain.length()-1][EndPlan] = selectDate.toString("dd.MM.yyyy 23:59:59");
-    rowListMain[rowListMain.length()-1][OrderPlan] = "ПРИВОЗ";
-    rowListMain[rowListMain.length()-1][QuantityPlan] = QString::number(Qty);
-    rowListMain[rowListMain.length()-1][CreamReqPlan] = QString::number(Qty);
-
-
-
-    //Корректировка по молоку
-    addRowEmpty();
-    Qty = 0.0;
-    for(int rStock = 1; rStock < rowListStock.length(); rStock++) {
-        const QString cat = "plan";
-        const QString type = "milk";
-        const QString mat = rowListStock[rStock].at(rowListStock[0].indexOf("ProductId"));
-        if(isComponent(&cat, &type, &mat, &selectPlant)) {
+        if(isComponent(cat, type, mat, selectPlant)) {
             if(rowListStock[rStock].at(rowListStock[0].indexOf("StockType")) == "movement") {
                 if(rowListStock[rStock].at(rowListStock[0].indexOf("ToWhId")).left(4) == selectPlant) {
                     QDateTime dt;
@@ -1521,7 +1435,7 @@ bool MainWindow::calculation() {
         const QString cat = "plan";
         const QString type = "skmilk";
         const QString mat = rowListStock[rStock].at(rowListStock[0].indexOf("ProductId"));
-        if(isComponent(&cat, &type, &mat, &selectPlant)) {
+        if(isComponent(cat, type, mat, selectPlant)) {
             if(rowListStock[rStock].at(rowListStock[0].indexOf("StockType")) == "movement") {
                 if(rowListStock[rStock].at(rowListStock[0].indexOf("ToWhId")).left(4) == selectPlant) {
                     QDateTime dt;
@@ -1552,7 +1466,7 @@ bool MainWindow::calculation() {
         const QString cat = "plan";
         const QString type = "cream";
         const QString mat = rowListStock[rStock].at(rowListStock[0].indexOf("ProductId"));
-        if(isComponent(&cat, &type, &mat, &selectPlant)) {
+        if(isComponent(cat, type, mat, selectPlant)) {
             if(rowListStock[rStock].at(rowListStock[0].indexOf("StockType")) == "movement") {
                 if(rowListStock[rStock].at(rowListStock[0].indexOf("ToWhId")).left(4) == selectPlant) {
                     QDateTime dt;
@@ -1584,14 +1498,17 @@ bool MainWindow::calculation() {
         const QString cat = "fact";
         const QString type = "milk";
         const QString mat = QString::number(rowListFactSupply[r].at(rowListFactSupply[0].indexOf("MATNR")).toLong());
-        if(isComponent(&cat, &type, &mat, &selectPlant)) {
-            if(rowListFactSupply[r].at(rowListFactSupply[0].indexOf("BWART")) == "105" ||
-            rowListFactSupply[r].at(rowListFactSupply[0].indexOf("BWART")) == "641") {
-                if(rowListFactSupply[r].at(rowListFactSupply[0].indexOf("WERKS")) == selectPlant) {
-                    QDate dt;
-                    dt = QDate::fromString(rowListFactSupply[r].at(rowListFactSupply[0].indexOf("BUDAT")), "dd.MM.yyyy");
-                    if(dt == selectDate) {
-                        Qty += rowListFactSupply[r].at(rowListFactSupply[0].indexOf("ERFMG")).toFloat();
+        if(isComponent(cat, type, mat, selectPlant)) {
+            if(rowListFactSupply[r].at(rowListFactSupply[0].indexOf("WERKS")) == selectPlant) {
+                if(!rowListFactSupply[r].at(rowListFactSupply[0].indexOf("LGORT")).isEmpty()) {
+                    if(rowListFactSupply[r].at(rowListFactSupply[0].indexOf("BWART")) == "105" ||
+                    rowListFactSupply[r].at(rowListFactSupply[0].indexOf("BWART")) == "ZI7" ||
+                    rowListFactSupply[r].at(rowListFactSupply[0].indexOf("BWART")) == "641") {
+                        QDate dt;
+                        dt = QDate::fromString(rowListFactSupply[r].at(rowListFactSupply[0].indexOf("BUDAT")), "dd.MM.yyyy");
+                        if(dt == selectDate) {
+                            Qty += rowListFactSupply[r].at(rowListFactSupply[0].indexOf("ERFMG")).toFloat();
+                        }
                     }
                 }
             }
@@ -1613,14 +1530,17 @@ bool MainWindow::calculation() {
         const QString cat = "fact";
         const QString type = "skmilk";
         const QString mat = QString::number(rowListFactSupply[r].at(rowListFactSupply[0].indexOf("MATNR")).toLong());
-        if(isComponent(&cat, &type, &mat, &selectPlant)) {
-            if(rowListFactSupply[r].at(rowListFactSupply[0].indexOf("BWART")) == "105" ||
-            rowListFactSupply[r].at(rowListFactSupply[0].indexOf("BWART")) == "641") {
-                if(rowListFactSupply[r].at(rowListFactSupply[0].indexOf("WERKS")) == selectPlant) {
-                    QDate dt;
-                    dt = QDate::fromString(rowListFactSupply[r].at(rowListFactSupply[0].indexOf("BUDAT")), "dd.MM.yyyy");
-                    if(dt == selectDate) {
-                        Qty += rowListFactSupply[r].at(rowListFactSupply[0].indexOf("ERFMG")).toFloat();
+        if(isComponent(cat, type, mat, selectPlant)) {
+            if(rowListFactSupply[r].at(rowListFactSupply[0].indexOf("WERKS")) == selectPlant) {
+                if(!rowListFactSupply[r].at(rowListFactSupply[0].indexOf("LGORT")).isEmpty()) {
+                    if(rowListFactSupply[r].at(rowListFactSupply[0].indexOf("BWART")) == "105" ||
+                    rowListFactSupply[r].at(rowListFactSupply[0].indexOf("BWART")) == "ZI7" ||
+                    rowListFactSupply[r].at(rowListFactSupply[0].indexOf("BWART")) == "641") {
+                        QDate dt;
+                        dt = QDate::fromString(rowListFactSupply[r].at(rowListFactSupply[0].indexOf("BUDAT")), "dd.MM.yyyy");
+                        if(dt == selectDate) {
+                            Qty += rowListFactSupply[r].at(rowListFactSupply[0].indexOf("ERFMG")).toFloat();
+                        }
                     }
                 }
             }
@@ -1642,14 +1562,17 @@ bool MainWindow::calculation() {
         const QString cat = "fact";
         const QString type = "cream";
         const QString mat = QString::number(rowListFactSupply[r].at(rowListFactSupply[0].indexOf("MATNR")).toLong());
-        if(isComponent(&cat, &type, &mat, &selectPlant)) {
-            if(rowListFactSupply[r].at(rowListFactSupply[0].indexOf("BWART")) == "105" ||
-            rowListFactSupply[r].at(rowListFactSupply[0].indexOf("BWART")) == "641") {
-                if(rowListFactSupply[r].at(rowListFactSupply[0].indexOf("WERKS")) == selectPlant) {
-                    QDate dt;
-                    dt = QDate::fromString(rowListFactSupply[r].at(rowListFactSupply[0].indexOf("BUDAT")), "dd.MM.yyyy");
-                    if(dt == selectDate) {
-                        Qty += rowListFactSupply[r].at(rowListFactSupply[0].indexOf("ERFMG")).toFloat();
+        if(isComponent(cat, type, mat, selectPlant)) {
+            if(rowListFactSupply[r].at(rowListFactSupply[0].indexOf("WERKS")) == selectPlant) {
+                if(!rowListFactSupply[r].at(rowListFactSupply[0].indexOf("LGORT")).isEmpty()) {
+                    if(rowListFactSupply[r].at(rowListFactSupply[0].indexOf("BWART")) == "105" ||
+                    rowListFactSupply[r].at(rowListFactSupply[0].indexOf("BWART")) == "ZI7" ||
+                    rowListFactSupply[r].at(rowListFactSupply[0].indexOf("BWART")) == "641") {
+                        QDate dt;
+                        dt = QDate::fromString(rowListFactSupply[r].at(rowListFactSupply[0].indexOf("BUDAT")), "dd.MM.yyyy");
+                        if(dt == selectDate) {
+                            Qty += rowListFactSupply[r].at(rowListFactSupply[0].indexOf("ERFMG")).toFloat();
+                        }
                     }
                 }
             }
@@ -1795,6 +1718,48 @@ void MainWindow::on_action_About_triggered()
 //    window.exec();
 //}
 
+//План прихода молока
+void MainWindow::setPlanTransfer(QString cat, QString type) {
+    addRowEmpty();
+    float Qty = 0.0;
+    for(int rStock = 1; rStock < rowListStock.length(); rStock++) {
+        const QString mat = rowListStock[rStock].at(rowListStock[0].indexOf("ProductId"));
+        const QString internalMaterial = rowListStock[rStock].at(rowListStock[0].indexOf("StockId")).left(9);
+        if(isComponent(cat, type, mat, selectPlant)) {
+            if(moveIsExcludeinStock(selectPlant, internalMaterial)) {
+                if(rowListStock[rStock].at(rowListStock[0].indexOf("StockType")) == "movement") {
+                    if(rowListStock[rStock].at(rowListStock[0].indexOf("ToWhId")).left(4) == selectPlant) {
+                        QDateTime dt;
+                        dt = QDateTime::fromString(rowListStock[rStock].at(rowListStock[0].indexOf("StartDate")), "yyyy-MM-dd hh:mm:ss");
+                        if(dt < QDateTime(selectDate.addDays(1))) {
+                            if(rowListStock[rStock].at(rowListStock[0].indexOf("Source")) != "Manual added stock level") {
+                                if(rowListStock[rStock].at(rowListStock[0].indexOf("ToWhId")).indexOf("$Outside") != -1) {
+                                    Qty += -1.0 * rowListStock[rStock].at(rowListStock[0].indexOf("Quantity")).toFloat();
+                                }
+                                else Qty += rowListStock[rStock].at(rowListStock[0].indexOf("Quantity")).toFloat();
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    rowListMain[rowListMain.length()-1][ProductLocationId] = type;
+    rowListMain[rowListMain.length()-1][EndPlan] = selectDate.toString("dd.MM.yyyy 23:59:59");
+    rowListMain[rowListMain.length()-1][OrderPlan] = "ПРИВОЗ";
+    rowListMain[rowListMain.length()-1][QuantityPlan] = QString::number(Qty);
+    if(type == "milk") {
+        rowListMain[rowListMain.length()-1][MilkReqPlan] = QString::number(Qty);
+    }
+    else if(type == "skmilk") {
+        rowListMain[rowListMain.length()-1][SkMilkReqPlan] = QString::number(Qty);
+    }
+    else if(type == "cream") {
+        rowListMain[rowListMain.length()-1][CreamReqPlan] = QString::number(Qty);
+    }
+}
+
+
 void MainWindow::addTotalReq() {
     //Добавить пустую запись
     addRowEmpty();
@@ -1855,41 +1820,55 @@ void MainWindow::deltaTotalStock(QString type) {
     }
 }
 
+bool MainWindow::moveIsExcludeinStock(const QString Plant,
+                                      const QString IntMaterial) {
+    if(Plant == selectPlant) {
+        foreach(QString m, listExcludeInternalMove) {
+            if(IntMaterial == m) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
 
 //Проверка на принадлежность отслеживаемому компоненту
-bool MainWindow::isComponent(const QString *Category, const QString *Type, const QString *Material, const QString *Plant) {
-    if(*Category == "plan") {
-        //int Pos = Material.indexOf("/");
+bool MainWindow::isComponent(const QString Category,
+                             const QString Type,
+                             const QString Material,
+                             const QString Plant) {
+    if(Category == "plan") {
         if(Plant == selectPlant) {
-            if(*Type == "milk") {
+            if(Type == "milk") {
                 foreach(QString m, listMilkPlan) {
                     if(Material == m) return true;
                 }
             }
-            else if(*Type == "skmilk") {
+            else if(Type == "skmilk") {
                 foreach(QString m, listSkMilkPlan) {
                     if(Material == m) return true;
                 }
             }
-            else if(*Type == "cream") {
+            else if(Type == "cream") {
                 foreach(QString m, listCreamPlan) {
                     if(Material == m) return true;
                 }
             }
         }
     }
-    else if(*Category == "fact") {
-        if(*Type == "milk") {
+    else if(Category == "fact") {
+        if(Type == "milk") {
             foreach(QString m, listMilkFact) {
                 if(Material == m) return true;
             }
         }
-        if(*Type == "skmilk") {
+        if(Type == "skmilk") {
             foreach(QString m, listSkMilkFact) {
                 if(Material == m) return true;
             }
         }
-        if(*Type == "cream") {
+        if(Type == "cream") {
             foreach(QString m, listCreamFact) {
                 if(Material == m) return true;
             }
@@ -2117,6 +2096,45 @@ bool MainWindow::loadCompopentsData() {
             }
         }
     }
+    f.close();
+
+
+    //Загрузка файла исключений внутренних плановых перемещений
+    pathData = pathFact + "/planfactmilk/exclinternalmove.cfg";
+    f.setFileName(pathData);
+    if(!QFile::exists(pathData)) {
+        QMessageBox::warning(0,"Ошибка", "Не найден файл exclinternalmove.cfg");
+        activategui(true);
+        return false;
+    }
+    if(!f.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        QMessageBox::warning(0,"Ошибка", "Невозможно прочитать файл exclinternalmove.cfg");
+        activategui(true);
+        return false;
+    }
+
+    stream.setDevice(&f);
+    stream.setCodec("UTF-8");
+
+    //Прочитать первую строку в заголовок
+    if(!stream.atEnd()) {
+        QString str = stream.readLine();
+        listHead = str.split('\t');
+    }
+    //Чтение
+    while (!stream.atEnd()) {
+        QString str = stream.readLine();
+        if(!str.isEmpty()) {
+            QStringList strlist;
+            strlist = str.split('\t');
+
+            if(!strlist.isEmpty()) {
+                if(strlist.at(listHead.indexOf("Plant")) == selectPlant) {
+                        listExcludeInternalMove << strlist[1];
+                    }
+                }
+            }
+        }
     f.close();
     return true;
 }

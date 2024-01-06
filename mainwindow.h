@@ -20,25 +20,29 @@ public:
     ~MainWindow();
     QString version;
     void activategui(bool stat);
-    void startUnpack(const QString &pathprogram,
-                    const QString &pathdirplan,
-                    const QString &pathdestiny);
+    void startUnpack(const QString pathprogram,
+                    const QString pathdirplan,
+                    const QString pathdestiny);
     void deletegarbage();
     bool calculation();
-    QString findSourceFile(const QString &sourceserver);
+    QString findSourceFile(const QString sourceserver);
     bool findFileFact();
-    bool loadFileFact(const QString *pathfile,
-                      const QString *pathfileprevious,
-                      const QString *pathfilesupply);
+    bool loadFileFact(const QString pathfile,
+                      const QString pathfileprevious,
+                      const QString pathfilesupply);
     virtual void timerEvent(QTimerEvent*);
     virtual void resizeEvent(QResizeEvent*);
-    QString findDirFact(const QDir &dir);
+    QString findDirFact(const QDir dir);
     bool loadCompopentsData();
     bool loadCriteria();
-    bool isComponent(const QString *Category,
-                     const QString *Type,
-                     const QString *Material,
-                     const QString *Plant);
+    bool isComponent(const QString Category,
+                     const QString Type,
+                     const QString Material,
+                     const QString Plant);
+    bool moveIsExcludeinStock(const QString Plant,
+                              const QString IntMaterial);
+    void setPlanTransfer(const QString Category,
+                         const QString Type);
     void addSubTotalRow();
     void addTotalRow();
     void deltaTotalStock(QString type);
@@ -92,6 +96,7 @@ private:
     QStringList listMilkFact;
     QStringList listSkMilkFact;
     QStringList listCreamFact;
+    QStringList listExcludeInternalMove;
 
     QList<QStringList> rowListProduct;
     QList<QStringList> rowListStep;
