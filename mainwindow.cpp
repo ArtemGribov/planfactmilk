@@ -1397,194 +1397,15 @@ bool MainWindow::calculation() {
     setPlanTransfer("plan", "skmilk");
     setPlanTransfer("plan", "cream");
 
-    //Корректировка по молоку
-    addRowEmpty();
-    float Qty = 0.0;
-    for(int rStock = 1; rStock < rowListStock.length(); rStock++) {
-        const QString cat = "plan";
-        const QString type = "milk";
-        const QString mat = rowListStock[rStock].at(rowListStock[0].indexOf("ProductId"));
-        if(isComponent(cat, type, mat, selectPlant)) {
-            if(rowListStock[rStock].at(rowListStock[0].indexOf("StockType")) == "movement") {
-                if(rowListStock[rStock].at(rowListStock[0].indexOf("ToWhId")).left(4) == selectPlant) {
-                    QDateTime dt;
-                    dt = QDateTime::fromString(rowListStock[rStock].at(rowListStock[0].indexOf("StartDate")), "yyyy-MM-dd hh:mm:ss");
-                    if(dt < QDateTime(selectDate.addDays(1))) {
-                        if(rowListStock[rStock].at(rowListStock[0].indexOf("Source")) == "Manual added stock level") {
-                            if(rowListStock[rStock].at(rowListStock[0].indexOf("ToWhId")).indexOf("$Outside") != -1) {
-                                Qty += -1.0 * rowListStock[rStock].at(rowListStock[0].indexOf("Quantity")).toFloat();
-                            }
-                            else Qty += rowListStock[rStock].at(rowListStock[0].indexOf("Quantity")).toFloat();
-                        }
-                    }
-                }
-            }
-        }
-    }
-    rowListMain[rowListMain.length()-1][ProductLocationId] = "milk";
-    rowListMain[rowListMain.length()-1][EndPlan] = selectDate.toString("dd.MM.yyyy 23:59:59");
-    rowListMain[rowListMain.length()-1][OrderPlan] = "movement";
-    rowListMain[rowListMain.length()-1][QuantityPlan] = QString::number(Qty);
-    rowListMain[rowListMain.length()-1][MilkReqPlan] = QString::number(Qty);
+    //Корректировка запасов плана
+    ManualCorrectionPlan("plan", "milk");
+    ManualCorrectionPlan("plan", "skmilk");
+    ManualCorrectionPlan("plan", "cream");
 
-
-    //Корректировка по обрату
-    addRowEmpty();
-    Qty = 0.0;
-    for(int rStock = 1; rStock < rowListStock.length(); rStock++) {
-        const QString cat = "plan";
-        const QString type = "skmilk";
-        const QString mat = rowListStock[rStock].at(rowListStock[0].indexOf("ProductId"));
-        if(isComponent(cat, type, mat, selectPlant)) {
-            if(rowListStock[rStock].at(rowListStock[0].indexOf("StockType")) == "movement") {
-                if(rowListStock[rStock].at(rowListStock[0].indexOf("ToWhId")).left(4) == selectPlant) {
-                    QDateTime dt;
-                    dt = QDateTime::fromString(rowListStock[rStock].at(rowListStock[0].indexOf("StartDate")), "yyyy-MM-dd hh:mm:ss");
-                    if(dt < QDateTime(selectDate.addDays(1))) {
-                        if(rowListStock[rStock].at(rowListStock[0].indexOf("Source")) == "Manual added stock level") {
-                            if(rowListStock[rStock].at(rowListStock[0].indexOf("ToWhId")).indexOf("$Outside") != -1) {
-                                Qty += -1.0 * rowListStock[rStock].at(rowListStock[0].indexOf("Quantity")).toFloat();
-                            }
-                            else Qty += rowListStock[rStock].at(rowListStock[0].indexOf("Quantity")).toFloat();
-                        }
-                    }
-                }
-            }
-        }
-    }
-    rowListMain[rowListMain.length()-1][ProductLocationId] = "skimmed milk";
-    rowListMain[rowListMain.length()-1][EndPlan] = selectDate.toString("dd.MM.yyyy 23:59:59");
-    rowListMain[rowListMain.length()-1][OrderPlan] = "movement";
-    rowListMain[rowListMain.length()-1][QuantityPlan] = QString::number(Qty);
-    rowListMain[rowListMain.length()-1][SkMilkReqPlan] = QString::number(Qty);
-
-
-    //Корректировка по сливкам
-    addRowEmpty();
-    Qty = 0.0;
-    for(int rStock = 1; rStock < rowListStock.length(); rStock++) {
-        const QString cat = "plan";
-        const QString type = "cream";
-        const QString mat = rowListStock[rStock].at(rowListStock[0].indexOf("ProductId"));
-        if(isComponent(cat, type, mat, selectPlant)) {
-            if(rowListStock[rStock].at(rowListStock[0].indexOf("StockType")) == "movement") {
-                if(rowListStock[rStock].at(rowListStock[0].indexOf("ToWhId")).left(4) == selectPlant) {
-                    QDateTime dt;
-                    dt = QDateTime::fromString(rowListStock[rStock].at(rowListStock[0].indexOf("StartDate")), "yyyy-MM-dd hh:mm:ss");
-                    if(dt < QDateTime(selectDate.addDays(1))) {
-                        if(rowListStock[rStock].at(rowListStock[0].indexOf("Source")) == "Manual added stock level") {
-                            if(rowListStock[rStock].at(rowListStock[0].indexOf("ToWhId")).indexOf("$Outside") != -1) {
-                                Qty += -1.0 * rowListStock[rStock].at(rowListStock[0].indexOf("Quantity")).toFloat();
-                            }
-                            else Qty += rowListStock[rStock].at(rowListStock[0].indexOf("Quantity")).toFloat();
-                        }
-                    }
-                }
-            }
-        }
-    }
-    rowListMain[rowListMain.length()-1][ProductLocationId] = "cream";
-    rowListMain[rowListMain.length()-1][EndPlan] = selectDate.toString("dd.MM.yyyy 23:59:59");
-    rowListMain[rowListMain.length()-1][OrderPlan] = "movement";
-    rowListMain[rowListMain.length()-1][QuantityPlan] = QString::number(Qty);
-    rowListMain[rowListMain.length()-1][CreamReqPlan] = QString::number(Qty);
-
-
-
-    //Факт прихода молока
-    addRowEmpty();
-    Qty = 0.0;
-    for(int r = 1; r < rowListFactSupply.length(); r++) {
-        const QString cat = "fact";
-        const QString type = "milk";
-        const QString mat = QString::number(rowListFactSupply[r].at(rowListFactSupply[0].indexOf("MATNR")).toLong());
-        if(isComponent(cat, type, mat, selectPlant)) {
-            if(rowListFactSupply[r].at(rowListFactSupply[0].indexOf("WERKS")) == selectPlant) {
-                if(!rowListFactSupply[r].at(rowListFactSupply[0].indexOf("LGORT")).isEmpty()) {
-                    if(rowListFactSupply[r].at(rowListFactSupply[0].indexOf("BWART")) == "105" ||
-                    rowListFactSupply[r].at(rowListFactSupply[0].indexOf("BWART")) == "ZI7" ||
-                    rowListFactSupply[r].at(rowListFactSupply[0].indexOf("BWART")) == "641") {
-                        QDate dt;
-                        dt = QDate::fromString(rowListFactSupply[r].at(rowListFactSupply[0].indexOf("BUDAT")), "dd.MM.yyyy");
-                        if(dt == selectDate) {
-                            Qty += rowListFactSupply[r].at(rowListFactSupply[0].indexOf("ERFMG")).toFloat();
-                        }
-                    }
-                }
-            }
-        }
-    }
-    rowListMain[rowListMain.length()-1][ProductLocationId] = "Молоко";
-    rowListMain[rowListMain.length()-1][StartFact] = selectDate.toString("dd.MM.yyyy 00:00:00");
-    rowListMain[rowListMain.length()-1][EndFact] = selectDate.toString("dd.MM.yyyy 23:59:59");
-    rowListMain[rowListMain.length()-1][Description] = "Привоз Молока";
-    rowListMain[rowListMain.length()-1][OrderFact] = "ПРИВОЗ";
-    rowListMain[rowListMain.length()-1][QuantityFact] = QString::number(Qty);
-    rowListMain[rowListMain.length()-1][MilkReqFact] = QString::number(Qty);
-
-
-    //Факт прихода обрата
-    addRowEmpty();
-    Qty = 0.0;
-    for(int r = 1; r < rowListFactSupply.length(); r++) {
-        const QString cat = "fact";
-        const QString type = "skmilk";
-        const QString mat = QString::number(rowListFactSupply[r].at(rowListFactSupply[0].indexOf("MATNR")).toLong());
-        if(isComponent(cat, type, mat, selectPlant)) {
-            if(rowListFactSupply[r].at(rowListFactSupply[0].indexOf("WERKS")) == selectPlant) {
-                if(!rowListFactSupply[r].at(rowListFactSupply[0].indexOf("LGORT")).isEmpty()) {
-                    if(rowListFactSupply[r].at(rowListFactSupply[0].indexOf("BWART")) == "105" ||
-                    rowListFactSupply[r].at(rowListFactSupply[0].indexOf("BWART")) == "ZI7" ||
-                    rowListFactSupply[r].at(rowListFactSupply[0].indexOf("BWART")) == "641") {
-                        QDate dt;
-                        dt = QDate::fromString(rowListFactSupply[r].at(rowListFactSupply[0].indexOf("BUDAT")), "dd.MM.yyyy");
-                        if(dt == selectDate) {
-                            Qty += rowListFactSupply[r].at(rowListFactSupply[0].indexOf("ERFMG")).toFloat();
-                        }
-                    }
-                }
-            }
-        }
-    }
-    rowListMain[rowListMain.length()-1][ProductLocationId] = "Обезж.молоко";
-    rowListMain[rowListMain.length()-1][StartFact] = selectDate.toString("dd.MM.yyyy 00:00:00");
-    rowListMain[rowListMain.length()-1][EndFact] = selectDate.toString("dd.MM.yyyy 23:59:59");
-    rowListMain[rowListMain.length()-1][Description] = "Привоз Обезж.молока";
-    rowListMain[rowListMain.length()-1][OrderFact] = "ПРИВОЗ";
-    rowListMain[rowListMain.length()-1][QuantityFact] = QString::number(Qty);
-    rowListMain[rowListMain.length()-1][SkMilkReqFact] = QString::number(Qty);
-
-
-    //Факт прихода сливок
-    addRowEmpty();
-    Qty = 0.0;
-    for(int r = 1; r < rowListFactSupply.length(); r++) {
-        const QString cat = "fact";
-        const QString type = "cream";
-        const QString mat = QString::number(rowListFactSupply[r].at(rowListFactSupply[0].indexOf("MATNR")).toLong());
-        if(isComponent(cat, type, mat, selectPlant)) {
-            if(rowListFactSupply[r].at(rowListFactSupply[0].indexOf("WERKS")) == selectPlant) {
-                if(!rowListFactSupply[r].at(rowListFactSupply[0].indexOf("LGORT")).isEmpty()) {
-                    if(rowListFactSupply[r].at(rowListFactSupply[0].indexOf("BWART")) == "105" ||
-                    rowListFactSupply[r].at(rowListFactSupply[0].indexOf("BWART")) == "ZI7" ||
-                    rowListFactSupply[r].at(rowListFactSupply[0].indexOf("BWART")) == "641") {
-                        QDate dt;
-                        dt = QDate::fromString(rowListFactSupply[r].at(rowListFactSupply[0].indexOf("BUDAT")), "dd.MM.yyyy");
-                        if(dt == selectDate) {
-                            Qty += rowListFactSupply[r].at(rowListFactSupply[0].indexOf("ERFMG")).toFloat();
-                        }
-                    }
-                }
-            }
-        }
-    }
-    rowListMain[rowListMain.length()-1][ProductLocationId] = "Сливки";
-    rowListMain[rowListMain.length()-1][StartFact] = selectDate.toString("dd.MM.yyyy 00:00:00");
-    rowListMain[rowListMain.length()-1][EndFact] = selectDate.toString("dd.MM.yyyy 23:59:59");
-    rowListMain[rowListMain.length()-1][Description] = "Привоз Сливок";
-    rowListMain[rowListMain.length()-1][OrderFact] = "ПРИВОЗ";
-    rowListMain[rowListMain.length()-1][QuantityFact] = QString::number(Qty);
-    rowListMain[rowListMain.length()-1][CreamReqFact] = QString::number(Qty);
+    //Факт приходов
+    setFactTransfer("fact", "milk");
+    setFactTransfer("fact", "skmilk");
+    setFactTransfer("fact", "cream");
 
 
     //Фильтр по молочным компонентам
@@ -1663,9 +1484,6 @@ bool MainWindow::calculation() {
     //Добавить итоги
     addTotalRow();
 
-    labelstatus->setText("План: " + QFileInfo(pathfileplan).birthTime().toString("dd.MM.yyyy hh:mm:ss") + "\t" +
-                         + "Факт: " + selectDate.addDays(1).toString("dd.MM.yyyy 00:00:00") + "\t");
-
     TableModelMain *model = new TableModelMain();
     model->rowList.append(MainWindow::rowListMain);
     model->Plant = &selectPlant;
@@ -1687,6 +1505,9 @@ bool MainWindow::calculation() {
     for(int i = 0; i < rowListMain.length(); i++)
         ui->tableView->setRowHeight(i, 10);
     ui->tableView->update();
+
+    labelstatus->setText("План: " + QFileInfo(pathfileplan).birthTime().toString("dd.MM.yyyy hh:mm:ss") + "\t" +
+                         + "Факт: " + selectDate.addDays(1).toString("dd.MM.yyyy 00:00:00") + "\t");
 
     return true;
 }
@@ -1718,6 +1539,85 @@ void MainWindow::on_action_About_triggered()
 //    window.exec();
 //}
 
+
+void MainWindow::ManualCorrectionPlan(const QString cat, const QString type) {
+    addRowEmpty();
+    float Qty = 0.0;
+    for(int rStock = 1; rStock < rowListStock.length(); rStock++) {
+        const QString mat = rowListStock[rStock].at(rowListStock[0].indexOf("ProductId"));
+        if(isComponent(cat, type, mat, selectPlant)) {
+            if(rowListStock[rStock].at(rowListStock[0].indexOf("StockType")) == "movement") {
+                if(rowListStock[rStock].at(rowListStock[0].indexOf("ToWhId")).left(4) == selectPlant) {
+                    QDateTime dt;
+                    dt = QDateTime::fromString(rowListStock[rStock].at(rowListStock[0].indexOf("StartDate")), "yyyy-MM-dd hh:mm:ss");
+                    if(dt < QDateTime(selectDate.addDays(1))) {
+                        if(rowListStock[rStock].at(rowListStock[0].indexOf("Source")) == "Manual added stock level") {
+                            if(rowListStock[rStock].at(rowListStock[0].indexOf("ToWhId")).indexOf("$Outside") != -1) {
+                                Qty += -1.0 * rowListStock[rStock].at(rowListStock[0].indexOf("Quantity")).toFloat();
+                            }
+                            else Qty += rowListStock[rStock].at(rowListStock[0].indexOf("Quantity")).toFloat();
+                        }
+                    }
+                }
+            }
+        }
+    }
+    rowListMain[rowListMain.length()-1][ProductLocationId] = type;
+    rowListMain[rowListMain.length()-1][EndPlan] = selectDate.toString("dd.MM.yyyy 23:59:59");
+    rowListMain[rowListMain.length()-1][OrderPlan] = "movement";
+    rowListMain[rowListMain.length()-1][QuantityPlan] = QString::number(Qty);
+    if(type == "milk") {
+        rowListMain[rowListMain.length()-1][MilkReqPlan] = QString::number(Qty);
+    }
+    else if(type == "skmilk") {
+        rowListMain[rowListMain.length()-1][SkMilkReqPlan] = QString::number(Qty);
+    }
+    else if(type == "cream") {
+        rowListMain[rowListMain.length()-1][CreamReqPlan] = QString::number(Qty);
+    }
+}
+
+
+//Факт приходов
+void MainWindow::setFactTransfer(const QString cat, const QString type) {
+    addRowEmpty();
+    float Qty = 0.0;
+    for(int r = 1; r < rowListFactSupply.length(); r++) {
+        const QString mat = QString::number(rowListFactSupply[r].at(rowListFactSupply[0].indexOf("MATNR")).toLong());
+        if(isComponent(cat, type, mat, selectPlant)) {
+            if(rowListFactSupply[r].at(rowListFactSupply[0].indexOf("WERKS")) == selectPlant) {
+                if(!rowListFactSupply[r].at(rowListFactSupply[0].indexOf("LGORT")).isEmpty()) {
+                    if(rowListFactSupply[r].at(rowListFactSupply[0].indexOf("BWART")) == "105" ||
+                    rowListFactSupply[r].at(rowListFactSupply[0].indexOf("BWART")) == "ZI7" ||
+                    rowListFactSupply[r].at(rowListFactSupply[0].indexOf("BWART")) == "641") {
+                        QDate dt;
+                        dt = QDate::fromString(rowListFactSupply[r].at(rowListFactSupply[0].indexOf("BUDAT")), "dd.MM.yyyy");
+                        if(dt == selectDate) {
+                            Qty += rowListFactSupply[r].at(rowListFactSupply[0].indexOf("ERFMG")).toFloat();
+                        }
+                    }
+                }
+            }
+        }
+    }
+    rowListMain[rowListMain.length()-1][ProductLocationId] = type;
+    rowListMain[rowListMain.length()-1][StartFact] = selectDate.toString("dd.MM.yyyy 00:00:00");
+    rowListMain[rowListMain.length()-1][EndFact] = selectDate.toString("dd.MM.yyyy 23:59:59");
+    rowListMain[rowListMain.length()-1][Description] = type;
+    rowListMain[rowListMain.length()-1][OrderFact] = "ПЕРЕМЕЩ.";
+    rowListMain[rowListMain.length()-1][QuantityFact] = QString::number(Qty);
+    if(type == "milk") {
+        rowListMain[rowListMain.length()-1][MilkReqFact] = QString::number(Qty);
+    }
+    else if(type == "skmilk") {
+        rowListMain[rowListMain.length()-1][SkMilkReqFact] = QString::number(Qty);
+    }
+    else if(type == "cream") {
+        rowListMain[rowListMain.length()-1][CreamReqFact] = QString::number(Qty);
+    }
+}
+
+
 //План прихода молока
 void MainWindow::setPlanTransfer(QString cat, QString type) {
     addRowEmpty();
@@ -1746,7 +1646,8 @@ void MainWindow::setPlanTransfer(QString cat, QString type) {
     }
     rowListMain[rowListMain.length()-1][ProductLocationId] = type;
     rowListMain[rowListMain.length()-1][EndPlan] = selectDate.toString("dd.MM.yyyy 23:59:59");
-    rowListMain[rowListMain.length()-1][OrderPlan] = "ПРИВОЗ";
+    rowListMain[rowListMain.length()-1][Description] = type;
+    rowListMain[rowListMain.length()-1][OrderPlan] = "ПЕРЕМЕЩ.";
     rowListMain[rowListMain.length()-1][QuantityPlan] = QString::number(Qty);
     if(type == "milk") {
         rowListMain[rowListMain.length()-1][MilkReqPlan] = QString::number(Qty);
@@ -2100,15 +2001,15 @@ bool MainWindow::loadCompopentsData() {
 
 
     //Загрузка файла исключений внутренних плановых перемещений
-    pathData = pathFact + "/planfactmilk/exclinternalmove.cfg";
+    pathData = pathFact + "/planfactmilk/excludeinternalmove.cfg";
     f.setFileName(pathData);
     if(!QFile::exists(pathData)) {
-        QMessageBox::warning(0,"Ошибка", "Не найден файл exclinternalmove.cfg");
+        QMessageBox::warning(0,"Ошибка", "Не найден файл excludeinternalmove.cfg");
         activategui(true);
         return false;
     }
     if(!f.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        QMessageBox::warning(0,"Ошибка", "Невозможно прочитать файл exclinternalmove.cfg");
+        QMessageBox::warning(0,"Ошибка", "Невозможно прочитать файл excludeinternalmove.cfg");
         activategui(true);
         return false;
     }
@@ -2144,7 +2045,7 @@ bool MainWindow::loadCompopentsData() {
 bool MainWindow::loadCriteria() {
     if(pathFact.isEmpty()) {
         QMessageBox::warning(0,"Ошибка", "Не найдена директория с фактическими данными. "
-                                         "Пожалуйста выполните Поиск через меню.");
+                                         "Пожалуйста выполните Поиск директории с фактом из через меню Настройки.");
         activategui(true);
         return false;
     }

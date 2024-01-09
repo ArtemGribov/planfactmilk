@@ -41,7 +41,11 @@ public:
                      const QString Plant);
     bool moveIsExcludeinStock(const QString Plant,
                               const QString IntMaterial);
+    void ManualCorrectionPlan(const QString Category,
+                         const QString Type);
     void setPlanTransfer(const QString Category,
+                         const QString Type);
+    void setFactTransfer(const QString Category,
                          const QString Type);
     void addSubTotalRow();
     void addTotalRow();
